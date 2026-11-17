@@ -730,27 +730,83 @@
     });
 
     // عرض الصور والفيديوهات التي يختارها المستخدم من جهازه.
-    document.getElementById('mediaFiles').addEventListener('change', function() {
-      const preview = document.getElementById('mediaPreview');
-      preview.innerHTML = '';
-      Array.from(this.files).forEach(file => {
-        const url = URL.createObjectURL(file);
-        const figure = document.createElement('figure');
-        let media;
-        if (file.type.startsWith('video/')) {
-          media = document.createElement('video');
-          media.controls = true;
-        } else {
-          media = document.createElement('img');
-          media.alt = file.name;
+    // إعدادات Supabase
+const SUPABASE_URL = https://dwajvnwrfnzutofisbau.supabase.co
+const SUPABASE_KEY = 'sb_publishable_nvJ_d9WQW0b3fNZ_swNJjQ_XNYWZVpk';
+const SUPABASE_BUCKET = 'resort-media';
+
+const mediaInput = document.getElementById('mediaFiles');
+const mediaPreview = document.getElementById('mediaPreview');
+
+mediaInput.addEventListener('change', async function () {
+  const files = Array.from(this.files || []);
+
+  for (const file of files) {
+    if (!file.type.startsWith('image/') &&
+        !file.type.startsWith('video/')) {
+      alert('من فضلك اختار صورة أو فيديو فقط');
+      continue;
+    }
+
+    const folder = file.type.startsWith('video/')
+      ? 'Videos'
+      : 'Images';
+
+    const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]/g, '_');
+
+    const filePath = `${folder}/${Date.now()}-${safeName}`;
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${filePath.split('/').map(encodeURIComponent).join('/')}`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': file.type,
+            'x-upsert': 'false'
+          },
+          body: file
         }
-        media.src = url;
-        const caption = document.createElement('figcaption');
-        caption.textContent = file.name;
-        figure.append(media, caption);
-        preview.appendChild(figure);
-      });
-    });
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'فشل رفع الملف');
+      }
+
+      const url = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${filePath.split('/').map(encodeURIComponent).join('/')}`;
+
+      const figure = document.createElement('figure');
+      const media = document.createElement(
+        file.type.startsWith('video/') ? 'video' : 'img'
+      );
+
+      media.src = url;
+
+      if (file.type.startsWith('video/')) {
+        media.controls = true;
+      } else {
+        media.alt = file.name;
+      }
+
+      const caption = document.createElement('figcaption');
+      caption.textContent = file.name;
+
+      figure.append(media, caption);
+      mediaPreview.prepend(figure);
+
+      alert('تم رفع الملف بنجاح ✅');
+
+    } catch (error) {
+      alert('فشل الرفع: ' + error.message);
+      console.error(error);
+    }
+  }
+
+  this.value = '';
+});
 
     // تخزين إجابات الاستبيان محليًا في المتصفح في هذه النسخة التجريبية
     document.getElementById('surveyForm').addEventListener('submit', function(e) {
