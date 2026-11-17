@@ -154,7 +154,6 @@
     .survey-success { display:none; background:#eaf7ee; color:#205b37; border:1px solid #bfe2c9; border-radius:12px; padding:15px; margin-top:15px; }
     @media (max-width:580px) { .top-nav { align-items:flex-start; flex-direction:column; } .nav-links { width:100%; } .nav-links a { flex:1; text-align:center; } }
 
-
     body { padding-top: 0; }
     .menu-toggle {
       position: fixed; z-index: 30; top: 18px; right: 18px; width: 48px; height: 48px;
@@ -566,7 +565,6 @@
     </div>
   </section>
 
-
   <section class="gallery-section page-panel" id="gallery" data-page="gallery">
     <div class="wrap">
       <div class="intro">
@@ -600,8 +598,7 @@
   </main>
 
   <footer>© 2026 SAKAN RESORT — تجربة ترفيهية مهيأة للجميع</footer>
-
-  <div class="modal" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-box">
       <button class="close" id="closeModal" aria-label="إغلاق">×</button>
       <h2 id="modalTitle">احجز تذكرتك</h2>
@@ -728,85 +725,116 @@
         window.scrollTo({top: 0, behavior: 'smooth'});
       });
     });
+        // إعدادات Supabase لرفع الصور والفيديوهات
+    const SUPABASE_URL = 'https://dwajvnwrfnzutofisbau.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_nvJ_d9WQW0b3fNZ_swNJjQ_XNYWZVpk';
+    const SUPABASE_BUCKET = 'resort-media';
+    const mediaInput = document.getElementById('mediaFiles');
+    const mediaPreview = document.getElementById('mediaPreview');
 
-    // عرض الصور والفيديوهات التي يختارها المستخدم من جهازه.
-    // إعدادات Supabase
-const SUPABASE_URL = https://dwajvnwrfnzutofisbau.supabase.co
-const SUPABASE_KEY = 'sb_publishable_nvJ_d9WQW0b3fNZ_swNJjQ_XNYWZVpk';
-const SUPABASE_BUCKET = 'resort-media';
-
-const mediaInput = document.getElementById('mediaFiles');
-const mediaPreview = document.getElementById('mediaPreview');
-
-mediaInput.addEventListener('change', async function () {
-  const files = Array.from(this.files || []);
-
-  for (const file of files) {
-    if (!file.type.startsWith('image/') &&
-        !file.type.startsWith('video/')) {
-      alert('من فضلك اختار صورة أو فيديو فقط');
-      continue;
+    function encodeStoragePath(path) {
+      return path.split('/').map(encodeURIComponent).join('/');
     }
 
-    const folder = file.type.startsWith('video/')
-      ? 'Videos'
-      : 'Images';
-
-    const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]/g, '_');
-
-    const filePath = `${folder}/${Date.now()}-${safeName}`;
-
-    try {
-      const response = await fetch(
-        `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${filePath.split('/').map(encodeURIComponent).join('/')}`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': file.type,
-            'x-upsert': 'false'
-          },
-          body: file
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'فشل رفع الملف');
-      }
-
-      const url = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${filePath.split('/').map(encodeURIComponent).join('/')}`;
-
+    function showMedia(url, name, isVideo) {
       const figure = document.createElement('figure');
-      const media = document.createElement(
-        file.type.startsWith('video/') ? 'video' : 'img'
-      );
-
+      const media = document.createElement(isVideo ? 'video' : 'img');
       media.src = url;
-
-      if (file.type.startsWith('video/')) {
+      if (isVideo) {
         media.controls = true;
+        media.preload = 'metadata';
       } else {
-        media.alt = file.name;
+        media.alt = name;
+        media.loading = 'lazy';
       }
-
       const caption = document.createElement('figcaption');
-      caption.textContent = file.name;
-
+      caption.textContent = name;
       figure.append(media, caption);
-      mediaPreview.prepend(figure);
-
-      alert('تم رفع الملف بنجاح ✅');
-
-    } catch (error) {
-      alert('فشل الرفع: ' + error.message);
-      console.error(error);
+      mediaPreview.appendChild(figure);
     }
-  }
 
-  this.value = '';
-});
+    async function listFolder(folder) {
+      const response = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${SUPABASE_BUCKET}`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prefix: `${folder}/`, limit: 100, offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' }
+        })
+      });
+      if (!response.ok) {
+        const details = await response.json().catch(() => ({}));
+        throw new Error(details.message || details.error || `HTTP ${response.status}`);
+      }
+      return await response.json();
+    }
+
+    async function loadStoredMedia() {
+      mediaPreview.innerHTML = '';
+      for (const folder of ['Images', 'Videos']) {
+        try {
+          const files = await listFolder(folder);
+          files.filter(item => item.name && item.id).forEach(item => {
+            const isVideo = folder === 'Videos' || /\.(mp4|webm|ogg|mov|m4v)$/i.test(item.name);
+            const path = `${folder}/${item.name}`;
+            const url = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${encodeStoragePath(path)}`;
+            showMedia(url, item.name, isVideo);
+          });
+        } catch (error) {
+          console.warn(`تعذر تحميل ملفات مجلد ${folder}:`, error);
+        }
+      }
+    }
+
+    mediaInput.addEventListener('change', async function () {
+      const files = Array.from(this.files || []);
+      if (!files.length) return;
+
+      for (const file of files) {
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+          alert(`الملف ${file.name} ليس صورة أو فيديو.`);
+          continue;
+        }
+        const isVideo = file.type.startsWith('video/');
+        const folder = isVideo ? 'Videos' : 'Images';
+        const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]/g, '_');
+        const objectPath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+
+        try {
+          const response = await fetch(
+            `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${encodeStoragePath(objectPath)}`,
+            {
+              method: 'POST',
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': file.type || 'application/octet-stream',
+                'x-upsert': 'false'
+              },
+              body: file
+            }
+          );
+          if (!response.ok) {
+            const details = await response.json().catch(() => ({}));
+            throw new Error(details.message || details.error || `HTTP ${response.status}`);
+          }
+          const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${encodeStoragePath(objectPath)}`;
+          showMedia(publicUrl, file.name, isVideo);
+          console.info('تم رفع الملف إلى Supabase:', objectPath);
+        } catch (error) {
+          console.error('Supabase upload error:', error);
+          alert(`فشل رفع ${file.name}: ${error.message}`);
+        }
+      }
+      this.value = '';
+    });
+
+    // تحميل الصور والفيديوهات المحفوظة عند فتح الموقع
+    loadStoredMedia();
 
     // تخزين إجابات الاستبيان محليًا في المتصفح في هذه النسخة التجريبية
     document.getElementById('surveyForm').addEventListener('submit', function(e) {
