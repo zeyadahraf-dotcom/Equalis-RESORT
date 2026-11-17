@@ -778,7 +778,11 @@
       for (const folder of ['Images', 'Videos']) {
         try {
           const files = await listFolder(folder);
-          files.filter(item => item.name && item.id).forEach(item => {
+          files.filter(item =>
+  item.name &&
+  item.id &&
+  !/emptyFolderPlaceholder/i.test(item.name)
+).forEach(item => {
             const isVideo = folder === 'Videos' || /\.(mp4|webm|ogg|mov|m4v)$/i.test(item.name);
             const path = `${folder}/${item.name}`;
             const url = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${encodeStoragePath(path)}`;
