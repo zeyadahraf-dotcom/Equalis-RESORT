@@ -525,48 +525,123 @@ async function loadMedia(kind){
     let errors = [];
 
     // قراءة جميع المجلدات
-    for (const folder of folders){
+async function loadMedia(kind){
 
-        let {data, error} = await db.storage
-            .from(BUCKET)
-            .list(folder, {
-                limit: 1000,
-                sortBy: {
-                    column: 'created_at',
-                    order: 'desc'
-                }
-            });
+    let grid = document.getElementById(
+        kind === 'menu' ? 'menuGrid' : 'galleryGrid'
+    );
 
-        if(error){
-            errors.push(folder + ': ' + error.message);
-            continue;
-        }
+    let empty = document.getElementById(
+        kind === 'menu' ? 'menuEmpty' : 'galleryEmpty'
+    );
 
-        (data || [])
-            .filter(file => file.name && file.id)
-            .forEach(file => {
+    grid.innerHTML = '<p>جارٍ تحميل الملفات...</p>';
 
-                items.push({
-                    file: file,
-                    path: folder + '/' + file.name
+    let folders = kind === 'menu'
+        ? ['menu']
+        : ['Images', 'Videos', 'gallery'];
+
+    let items = [];
+
+    try {
+
+        for (const folder of folders) {
+
+            let {data, error} = await db.storage
+                .from(BUCKET)
+                .list(folder, {
+                    limit: 1000,
+                    sortBy: {
+                        column: 'created_at',
+                        order: 'desc'
+                    }
                 });
 
+            if(error) {
+                console.error(folder, error);
+                continue;
+            }
+
+            (data || []).forEach(file => {
+
+                if(file.name && file.id) {
+
+                    items.push({
+                        file,
+                        path: folder + '/' + file.name
+                    });
+
+                }
+
             });
-    }
 
-    grid.innerHTML = '';
+        }
 
-    empty.classList.toggle('hidden', items.length > 0);
+        grid.innerHTML = '';
 
-    if(errors.length && items.length === 0){
+        empty.classList.toggle('hidden', items.length > 0);
+
+        items.forEach(({file, path}) => {
+
+            let url = db.storage
+                .from(BUCKET)
+                .getPublicUrl(path).data.publicUrl;
+
+            let type = (file.metadata?.mimetype || '').toLowerCase();
+
+            let isVideo =
+                type.startsWith('video/') ||
+                /\.(mp4|webm|mov|m4v)$/i.test(file.name);
+
+            let card = document.createElement('div');
+            card.className = 'media-card';
+
+            let media = document.createElement(
+                isVideo ? 'video' : 'img'
+            );
+
+            media.src = url;
+
+            if(isVideo) {
+                media.controls = true;
+                media.playsInline = true;
+            } else {
+                media.alt = file.name;
+            }
+
+            let cap = document.createElement('figcaption');
+            cap.textContent = file.name;
+
+            card.append(media, cap);
+
+            if(currentUser) {
+
+                let del = document.createElement('button');
+
+                del.className = 'btn danger';
+                del.textContent = 'حذف';
+
+                del.onclick = () => deleteMedia(path, kind);
+
+                card.append(del);
+            }
+
+            grid.append(card);
+
+        });
+
+    } catch(error) {
 
         grid.innerHTML =
-            '<p class="notice">تعذر تحميل الملفات: ' +
-            escapeHtml(errors.join(' | ')) +
+            '<p class="notice">حدث خطأ: ' +
+            escapeHtml(error.message) +
             '</p>';
 
-        return;
+        console.error(error);
+
     }
+
+}
 
     // عرض الصور والفيديوهات
     items.forEach(({file, path}) => {
