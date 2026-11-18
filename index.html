@@ -1119,26 +1119,52 @@
     // ==========================================
     // دخول المسؤول وعرض البيانات (للمستخدمين الموجودين في admin_users)
     // ==========================================
-    const adminLoginForm = document.getElementById('adminLoginForm');
-    adminLoginForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      setDbStatus('adminStatus', 'جاري تسجيل الدخول...');
-      const email = document.getElementById('adminEmail').value.trim();
-      const password = document.getElementById('adminPassword').value;
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) { setDbStatus('adminStatus', `فشل تسجيل الدخول: ${error.message}`, true); return; }
-      const { data: admin, error: adminError } = await supabaseClient.from('admin_users')
-        .select('user_id').eq('user_id', data.user.id).maybeSingle();
-      if (adminError || !admin) {
-        await supabaseClient.auth.signOut();
-        setDbStatus('adminStatus', 'هذا الحساب غير موجود في admin_users أو لا يملك صلاحية القراءة.', true);
-        return;
-      }
-      adminLoginForm.hidden = true;
-      document.getElementById('adminDashboard').hidden = false;
-      setDbStatus('adminStatus', 'تم تسجيل الدخول بنجاح.');
-      await loadAdminData();
-    });
+const adminLoginForm = document.getElementById('adminLoginForm');
+
+adminLoginForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  setDbStatus('adminStatus', 'جاري تسجيل الدخول...');
+
+  const email = document.getElementById('adminEmail').value.trim();
+  const password = document.getElementById('adminPassword').value;
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    setDbStatus('adminStatus', `فشل تسجيل الدخول: ${error.message}`, true);
+    return;
+  }
+
+  const { data: isAdmin, error: adminError } =
+    await supabaseClient.rpc('is_admin');
+
+  if (adminError) {
+    await supabaseClient.auth.signOut();
+    setDbStatus(
+      'adminStatus',
+      `خطأ التحقق من الصلاحيات: ${adminError.message}`,
+      true
+    );
+    return;
+  }
+
+  if (isAdmin !== true) {
+    await supabaseClient.auth.signOut();
+    setDbStatus('adminStatus', 'هذا الحساب ليس مسؤولاً.', true);
+    return;
+  }
+
+  adminLoginForm.hidden = true;
+  document.getElementById('adminDashboard').hidden = false;
+
+  setDbStatus('adminStatus', 'تم تسجيل الدخول بنجاح.');
+
+  await loadAdminData();
+});
 
     async function loadAdminData() {
       const bookingsBox = document.getElementById('adminBookings');
