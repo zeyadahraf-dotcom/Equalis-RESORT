@@ -277,7 +277,6 @@ footer{text-align:center;padding:24px;color:#776}
 </section>
 
 </main>
-
 <footer>© 2026 SAKAN RESORT — تجربة ترفيهية مهيأة للجميع</footer>
 
 <div class="modal" id="bookingModal">
@@ -303,8 +302,8 @@ footer{text-align:center;padding:24px;color:#776}
 </div>
 
 <script>
-  const SUPABASE_URL='https://dwajvnwrfnzutofisbau.supabase.co';
-const SUPABASE_KEY='sb_publishable_nvJ_d9WQW0b3fNZ_swNJjQ_XNYWZVpk';
+const SUPABASE_URL='https://dwajvnwrfnzutofisbau.supabase.co';
+const SUPABASE_KEY='sb_publishable_nvJ_d9WQW0Wb3fNZ_swNJjQ_XNYWZVpk';
 const BUCKET='resort-media';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
@@ -505,119 +504,128 @@ msg.scrollIntoView({behavior:'smooth',block:'center'});
 };
 
 async function loadMedia(kind){
+    const isMenu = kind === 'menu';
+    const grid = document.getElementById(isMenu ? 'menuGrid' : 'galleryGrid');
+    const empty = document.getElementById(isMenu ? 'menuEmpty' : 'galleryEmpty');
 
-    let grid = document.getElementById(
-        kind === 'menu' ? 'menuGrid' : 'galleryGrid'
-    );
+    if (!grid || !empty) return;
 
-    let empty = document.getElementById(
-        kind === 'menu' ? 'menuEmpty' : 'galleryEmpty'
-    );
+    grid.innerHTML = '<p class="notice">جارٍ تحميل الملفات...</p>';
+    empty.classList.add('hidden');
 
-    grid.innerHTML = '<p>جارٍ تحميل الملفات...</p>';
-
-    // تحديد المجلدات الصحيحة
-    let folders = kind === 'menu'
-        ? ['menu']
-        : ['Images', 'Videos', 'gallery'];
-
-    let items = [];
-    let errors = [];
-
-    // قراءة جميع المجلدات
-async function loadMedia(kind){
-
-    let grid = document.getElementById(
-        kind === 'menu' ? 'menuGrid' : 'galleryGrid'
-    );
-
-    let empty = document.getElementById(
-        kind === 'menu' ? 'menuEmpty' : 'galleryEmpty'
-    );
-
-    grid.innerHTML = '<p>جارٍ تحميل الملفات...</p>';
-
-    let folders = kind === 'menu'
-        ? ['menu']
-        : ['Images', 'Videos', 'gallery'];
-
-    let items = [];
+    // مسارات التخزين المعتمدة داخل Bucket: resort-media
+    // المنيو: menu/ | صور المعرض: Images/ | فيديوهات المعرض: Videos/
+    // gallery/ مدعوم أيضًا لعرض الملفات القديمة.
+    const folders = isMenu ? ['menu'] : ['Images', 'Videos', 'gallery'];
+    const items = [];
+    const errors = [];
 
     try {
-
         for (const folder of folders) {
-
-            let {data, error} = await db.storage
+            const { data, error } = await db.storage
                 .from(BUCKET)
                 .list(folder, {
                     limit: 1000,
-                    sortBy: {
-                        column: 'created_at',
-                        order: 'desc'
-                    }
+                    sortBy: { column: 'created_at', order: 'desc' }
                 });
 
-            if(error) {
-                console.error(folder, error);
+            if (error) {
+                errors.push(folder + ': ' + error.message);
+                console.error('Storage list error:', folder, error);
                 continue;
             }
 
             (data || []).forEach(file => {
-
-                if(file.name && file.id) {
-
-                    items.push({
-                        file,
-                        path: folder + '/' + file.name
-                    });
-
+                // عناصر المجلدات نفسها لا تحتوي عادةً على id؛ نعرض الملفات فقط.
+                if (file && file.name && file.id) {
+                    items.push({ file, path: folder + '/' + file.name });
                 }
-
             });
-
         }
+
+        // دعم الملفات القديمة التي كانت محفوظة مباشرة في جذر Bucket.
+        if (!isMenu) {
+            const { data: rootFiles, error: rootError } = await db.storage
+                .from(BUCKET)
+                .list('', { limit: 1000 });
+
+            if (rootError) {
+                console.warn('Could not list bucket root:', rootError.message);
+            } else {
+                (rootFiles || []).forEach(file => {
+                    if (file && file.name && file.id) {
+                        items.push({ file, path: file.name });
+                    }
+                });
+            }
+        }
+              // منع عرض الملف مرتين لو موجود في أكثر من مسار.
+        const uniqueItems = [];
+        const seenPaths = new Set();
+
+        items.forEach(item => {
+            if (!seenPaths.has(item.path)) {
+                seenPaths.add(item.path);
+                uniqueItems.push(item);
+            }
+        });
 
         grid.innerHTML = '';
 
-        empty.classList.toggle('hidden', items.length > 0);
+        if (uniqueItems.length === 0) {
+            empty.classList.remove('hidden');
 
-        items.forEach(({file, path}) => {
-
-            let url = db.storage
-                .from(BUCKET)
-                .getPublicUrl(path).data.publicUrl;
-
-            let type = (file.metadata?.mimetype || '').toLowerCase();
-
-            let isVideo =
-                type.startsWith('video/') ||
-                /\.(mp4|webm|mov|m4v)$/i.test(file.name);
-
-            let card = document.createElement('div');
-            card.className = 'media-card';
-
-            let media = document.createElement(
-                isVideo ? 'video' : 'img'
-            );
-
-            media.src = url;
-
-            if(isVideo) {
-                media.controls = true;
-                media.playsInline = true;
-            } else {
-                media.alt = file.name;
+            if (errors.length) {
+                grid.innerHTML =
+                    '<p class="notice">تعذر تحميل بعض المجلدات: ' +
+                    escapeHtml(errors.join(' | ')) +
+                    '</p>';
             }
 
-            let cap = document.createElement('figcaption');
-            cap.textContent = file.name;
+            return;
+        }
 
-            card.append(media, cap);
+        empty.classList.add('hidden');
 
-            if(currentUser) {
+        uniqueItems.sort((a, b) => {
+            return new Date(b.file.created_at || 0) -
+                   new Date(a.file.created_at || 0);
+        });
 
-                let del = document.createElement('button');
+        uniqueItems.forEach(({ file, path }) => {
+            const { data } = db.storage
+                .from(BUCKET)
+                .getPublicUrl(path);
 
+            const url = data.publicUrl;
+            const type = (file.metadata?.mimetype || '').toLowerCase();
+
+            const isVideo =
+                type.startsWith('video/') ||
+                /\.(mp4|webm|mov|m4v|ogg)$/i.test(file.name);
+
+            const card = document.createElement('div');
+            card.className = 'media-card';
+
+            const media = document.createElement(isVideo ? 'video' : 'img');
+            media.src = url;
+
+            if (isVideo) {
+                media.controls = true;
+                media.playsInline = true;
+                media.preload = 'metadata';
+            } else {
+                media.alt = file.name;
+                media.loading = 'lazy';
+            }
+
+            const caption = document.createElement('figcaption');
+            caption.textContent = file.name;
+
+            card.append(media, caption);
+
+            if (currentUser) {
+                const del = document.createElement('button');
                 del.className = 'btn danger';
                 del.textContent = 'حذف';
 
@@ -627,276 +635,311 @@ async function loadMedia(kind){
             }
 
             grid.append(card);
-
         });
 
-    } catch(error) {
+    } catch (error) {
+        console.error('loadMedia error:', error);
 
         grid.innerHTML =
-            '<p class="notice">حدث خطأ: ' +
+            '<p class="notice">حدث خطأ أثناء تحميل الملفات: ' +
             escapeHtml(error.message) +
             '</p>';
+    }
+}
 
-        console.error(error);
-
+async function deleteMedia(path, kind) {
+    if (!currentUser) {
+        alert('سجل دخول الإدارة أولًا.');
+        return;
     }
 
+    if (!confirm('هل تريد حذف هذا الملف نهائيًا؟')) {
+        return;
+    }
+
+    const { error } = await db.storage
+        .from(BUCKET)
+        .remove([path]);
+
+    if (error) {
+        alert('فشل حذف الملف: ' + error.message);
+        return;
+    }
+
+    alert('تم حذف الملف بنجاح.');
+    await loadMedia(kind);
 }
 
-    // عرض الصور والفيديوهات
-    items.forEach(({file, path}) => {
+async function upload(kind) {
+    if (!currentUser) {
+        alert('سجل دخول الإدارة أولًا.');
+        return;
+    }
 
-        let url = db.storage
-            .from(BUCKET)
-            .getPublicUrl(path).data.publicUrl;
+    const input = document.getElementById(
+        kind === 'menu' ? 'menuFiles' : 'galleryFiles'
+    );
 
-        let type = (
-            file.metadata?.mimetype || ''
-        ).toLowerCase();
+    const files = Array.from(input.files || []);
 
-        let isVideo =
-            type.startsWith('video/') ||
-            /\.(mp4|webm|mov|m4v)$/i.test(file.name);
+    if (!files.length) {
+        alert('اختار ملف واحد على الأقل.');
+        return;
+    }
 
-        let card = document.createElement('div');
+    const button = document.getElementById(
+        kind === 'menu' ? 'uploadMenu' : 'uploadGallery'
+    );
 
-        card.className = 'media-card';
+    const oldText = button.textContent;
+    button.disabled = true;
 
-        let media = document.createElement(
-            isVideo ? 'video' : 'img'
+    let successCount = 0;
+    let failedCount = 0;
+
+    try {
+        for (const file of files) {
+            if (file.size > 50 * 1024 * 1024) {
+                alert(file.name + ' أكبر من 50MB.');
+                failedCount++;
+                continue;
+            }
+
+            if (kind === 'menu' && !file.type.startsWith('image/')) {
+                alert('المنيو يقبل الصور فقط: ' + file.name);
+                failedCount++;
+                continue;
+            }
+
+            if (
+                kind === 'gallery' &&
+                !file.type.startsWith('image/') &&
+                !file.type.startsWith('video/')
+            ) {
+                alert('نوع الملف غير مدعوم: ' + file.name);
+                failedCount++;
+                continue;
+            }
+
+            let folder;
+
+            if (kind === 'menu') {
+                folder = 'menu';
+            } else if (file.type.startsWith('video/')) {
+                folder = 'Videos';
+            } else {
+                folder = 'Images';
+            }
+
+            const safeName = file.name.replace(
+                /[^\w.\-\u0600-\u06FF]/g,
+                '_'
+            );
+
+            const path =
+                folder + '/' + Date.now() + '_' +
+                Math.random().toString(36).slice(2, 8) +
+                '_' + safeName;
+
+            button.textContent = 'جاري رفع ' + file.name + '...';
+
+            const { error } = await db.storage
+                .from(BUCKET)
+                .upload(path, file, {
+                    upsert: false,
+                    contentType: file.type,
+                    cacheControl: '3600'
+                });
+
+            if (error) {
+                console.error('Upload error:', path, error);
+                alert('فشل رفع ' + file.name + ': ' + error.message);
+                failedCount++;
+            } else {
+                successCount++;
+            }
+        }
+
+    } catch (error) {
+        console.error('Upload process error:', error);
+        alert('حدث خطأ أثناء الرفع: ' + error.message);
+        failedCount++;
+
+    } finally {
+        input.value = '';
+        button.disabled = false;
+        button.textContent = oldText;
+
+        await loadMedia(kind);
+    }
+
+    if (successCount > 0 || failedCount > 0) {
+        alert(
+            'انتهت عملية الرفع.\n' +
+            'تم رفع: ' + successCount + '\n' +
+            'فشل: ' + failedCount
+        );
+    }
+}
+
+document.getElementById('uploadMenu').onclick = () => upload('menu');
+
+document.getElementById('uploadGallery').onclick = () => upload('gallery');
+
+document.getElementById('loginButton').onclick = async () => {
+    const email = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+
+    const msg = document.getElementById('adminMessage');
+
+    if (!email || !password) {
+        msg.textContent = 'اكتب البريد الإلكتروني وكلمة المرور.';
+        msg.classList.remove('hidden');
+        return;
+    }
+
+    const { data, error } = await db.auth.signInWithPassword({
+        email,
+        password
+    });
+
+    if (error) {
+        msg.textContent = 'فشل تسجيل الدخول: ' + error.message;
+        msg.classList.remove('hidden');
+        return;
+    }
+
+    currentUser = data.user;
+
+    msg.classList.add('hidden');
+
+    updateAuthUI();
+    await loadAdmin();
+};
+
+document.getElementById('logoutButton').onclick = async () => {
+    const { error } = await db.auth.signOut();
+
+    if (error) {
+        alert('تعذر تسجيل الخروج: ' + error.message);
+        return;
+    }
+
+    currentUser = null;
+
+    updateAuthUI();
+
+    loadMedia('menu');
+    loadMedia('gallery');
+};
+
+function updateAuthUI() {
+    document.getElementById('loginPanel')
+        .classList.toggle('hidden', !!currentUser);
+
+    document.getElementById('adminPanel')
+        .classList.toggle('hidden', !currentUser);
+
+    document.querySelectorAll('.admin-only').forEach(element => {
+        element.classList.toggle('hidden', !currentUser);
+    });
+
+    if (currentUser) {
+        document.getElementById('adminStatus').textContent =
+            'تم تسجيل الدخول: ' + currentUser.email;
+    }
+}
+
+async function loadAdmin() {
+    if (!currentUser) return;
+
+    const bookingsList = document.getElementById('bookingsList');
+    const surveysList = document.getElementById('surveysList');
+
+    bookingsList.textContent = 'جارٍ تحميل طلبات الحجز...';
+    surveysList.textContent = 'جارٍ تحميل ردود الاستبيان...';
+
+    const [bookingsResult, surveysResult] = await Promise.all([
+        db.from('bookings')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100),
+
+        db.from('survey_responses')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100)
+    ]);
+
+    bookingsList.innerHTML = bookingsResult.error
+        ? '<p class="notice">' +
+          escapeHtml(bookingsResult.error.message) +
+          '</p>'
+        : tableHtml(
+            bookingsResult.data,
+            [
+                'visitor_name',
+                'phone',
+                'activity',
+                'visit_date',
+                'quantity',
+                'total'
+            ]
         );
 
-        media.src = url;
-
-        if(isVideo){
-            media.controls = true;
-            media.playsInline = true;
-        }else{
-            media.alt = file.name;
-        }
-
-        let cap = document.createElement('figcaption');
-
-        cap.textContent = file.name;
-
-        card.append(media, cap);
-
-        if(currentUser){
-
-            let del = document.createElement('button');
-
-            del.className = 'btn danger';
-            del.textContent = 'حذف';
-
-            del.onclick = () => deleteMedia(path, kind);
-
-            card.append(del);
-        }
-
-        grid.append(card);
-
-    });
-}
-grid.innerHTML='<p>جارٍ تحميل الملفات...</p>';
-
-let {data:folderFiles,error}=await db.storage.from(BUCKET).list(kind,{
-limit:1000,
-sortBy:{column:'created_at',order:'desc'}
-});
-
-if(error){
-grid.innerHTML='<p class="notice">تعذر تحميل الملفات: '+escapeHtml(error.message)+'</p>';
-return;
+    surveysList.innerHTML = surveysResult.error
+        ? '<p class="notice">' +
+          escapeHtml(surveysResult.error.message) +
+          '</p>'
+        : tableHtml(
+            (surveysResult.data || []).map(item => ({
+                created_at: item.created_at,
+                answers: JSON.stringify(item.answers)
+            })),
+            ['created_at', 'answers']
+        );
 }
 
-let items=[];
+function tableHtml(rows, keys) {
+    if (!rows || !rows.length) {
+        return '<p>لا توجد سجلات حتى الآن.</p>';
+    }
 
-(folderFiles||[]).filter(x=>x.name&&x.id).forEach(file=>{
-items.push({file,path:kind+'/'+file.name});
-});
+    return '<table><thead><tr>' +
+        keys.map(key => '<th>' + escapeHtml(key) + '</th>').join('') +
+        '</tr></thead><tbody>' +
 
-if(kind==='gallery'){
-let {data:root,error:rootErr}=await db.storage.from(BUCKET).list('',{limit:1000});
-if(!rootErr){
-(root||[]).filter(x=>x.name&&x.id).forEach(file=>{
-items.push({file,path:file.name});
-});
-}
-}
+        rows.map(row => '<tr>' +
+            keys.map(key => {
+                const value = row[key];
 
-grid.innerHTML='';
-empty.classList.toggle('hidden',items.length>0);
+                return '<td>' +
+                    escapeHtml(
+                        typeof value === 'object'
+                            ? JSON.stringify(value)
+                            : value
+                    ) +
+                    '</td>';
+            }).join('') +
+            '</tr>'
+        ).join('') +
 
-items.forEach(({file,path})=>{
-let url=db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-let type=(file.metadata?.mimetype||'').toLowerCase();
-let isVideo=type.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/i.test(file.name);
-
-let card=document.createElement('div');
-card.className='media-card';
-
-let media=document.createElement(isVideo?'video':'img');
-media.src=url;
-
-if(isVideo){
-media.controls=true;
-media.playsInline=true;
-}else{
-media.alt=file.name;
+        '</tbody></table>';
 }
 
-let cap=document.createElement('figcaption');
-cap.textContent=file.name;
-card.append(media,cap);
+db.auth.getSession().then(({ data, error }) => {
+    if (error) {
+        console.error('Session error:', error);
+        return;
+    }
 
-if(currentUser){
-let del=document.createElement('button');
-del.className='btn danger';
-del.textContent='حذف';
-del.onclick=()=>deleteMedia(path,kind);
-card.append(del);
-}
+    currentUser = data.session?.user || null;
 
-grid.append(card);
-});
-}
-
-async function deleteMedia(path,kind){
-if(!confirm('هل تريد حذف هذا الملف نهائيًا؟'))return;
-let {error}=await db.storage.from(BUCKET).remove([path]);
-if(error)alert(error.message);
-else loadMedia(kind);
-}
-
-async function upload(kind){
-if(!currentUser){
-alert('سجل دخول الإدارة أولًا.');
-return;
-}
-
-let input=document.getElementById(kind==='menu'?'menuFiles':'galleryFiles');
-let files=[...input.files];
-
-if(!files.length){
-alert('اختار ملف واحد على الأقل.');
-return;
-}
-
-for(let file of files){
-
-if(file.size>50*1024*1024){
-alert(file.name+' أكبر من 50MB');
-continue;
-}
-
-if(kind==='menu'&&!file.type.startsWith('image/')){
-alert('المنيو يقبل الصور فقط.');
-continue;
-}
-
-if(kind==='gallery'&&!file.type.startsWith('image/')&&!file.type.startsWith('video/'))continue;
-
-let safe = file.name.replace(/[^\w.\-\u0600-\u06FF]/g,'_');
-
-let folder;
-
-if (kind === 'menu') {
-    folder = 'menu';
-} else if (file.type.startsWith('video/')) {
-    folder = 'Videos';
-} else {
-    folder = 'Images';
-}
-
-let path = folder + '/' + Date.now() + '_' + safe;
-
-let {error}=await db.storage.from(BUCKET).upload(path,file,{
-upsert:false,
-contentType:file.type
-});
-
-if(error)alert('فشل رفع '+file.name+': '+error.message);
-}
-
-input.value='';
-loadMedia(kind);
-}
-
-document.getElementById('uploadMenu').onclick=()=>upload('menu');
-document.getElementById('uploadGallery').onclick=()=>upload('gallery');
-
-document.getElementById('loginButton').onclick=async()=>{
-let email=document.getElementById('adminEmail').value;
-let password=document.getElementById('adminPassword').value;
-
-let {data,error}=await db.auth.signInWithPassword({email,password});
-let msg=document.getElementById('adminMessage');
-
-if(error){
-msg.textContent='فشل تسجيل الدخول: '+error.message;
-msg.classList.remove('hidden');
-return;
-}
-
-currentUser=data.user;
-updateAuthUI();
-loadAdmin();
-};
-
-document.getElementById('logoutButton').onclick=async()=>{
-await db.auth.signOut();
-currentUser=null;
-updateAuthUI();
-};
-
-function updateAuthUI(){
-document.getElementById('loginPanel').classList.toggle('hidden',!!currentUser);
-document.getElementById('adminPanel').classList.toggle('hidden',!currentUser);
-document.querySelectorAll('.admin-only').forEach(x=>x.classList.toggle('hidden',!currentUser));
-
-if(currentUser){
-document.getElementById('adminStatus').textContent='تم تسجيل الدخول: '+currentUser.email;
-}
-}
-
-async function loadAdmin(){
-let b=document.getElementById('bookingsList');
-let s=document.getElementById('surveysList');
-
-b.textContent='جارٍ التحميل...';
-s.textContent='جارٍ التحميل...';
-
-let [br,sr]=await Promise.all([
-db.from('bookings').select('*').order('created_at',{ascending:false}).limit(100),
-db.from('survey_responses').select('*').order('created_at',{ascending:false}).limit(100)
-]);
-
-b.innerHTML=br.error?escapeHtml(br.error.message):tableHtml(br.data,['visitor_name','phone','activity','visit_date','quantity','total']);
-
-s.innerHTML=sr.error?escapeHtml(sr.error.message):tableHtml(
-(sr.data||[]).map(x=>({created_at:x.created_at,answers:JSON.stringify(x.answers)})),
-['created_at','answers']
-);
-}
-
-function tableHtml(rows,keys){
-if(!rows?.length)return'<p>لا توجد سجلات حتى الآن.</p>';
-
-return'<table><thead><tr>'+
-keys.map(k=>'<th>'+k+'</th>').join('')+
-'</tr></thead><tbody>'+
-rows.map(r=>'<tr>'+
-keys.map(k=>'<td>'+escapeHtml(typeof r[k]==='object'?JSON.stringify(r[k]):r[k])+'</td>').join('')+
-'</tr>').join('')+
-'</tbody></table>';
-}
-
-db.auth.getSession().then(({data})=>{
-currentUser=data.session?.user||null;
-updateAuthUI();
+    updateAuthUI();
 });
 
 showPage('booking');
+
 </script>
 </body>
 </html>
