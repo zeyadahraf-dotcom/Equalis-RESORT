@@ -1,1282 +1,1086 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#176b63">
-<title>SAKAN RESORT | احجز تجربتك</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAKAN RESORT | الموقع الرسمي</title>
+  <style>
+    :root {
+      --primary: #176b63;
+      --primary-dark: #10534d;
+      --accent: #e6ad55;
+      --ink: #20312f;
+      --muted: #687875;
+      --bg: #f4f8f6;
+      --card: #ffffff;
+      --line: #e2ebe7;
+      --shadow: 0 12px 32px rgba(25, 67, 59, .09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Tahoma, Arial, sans-serif; color: var(--ink);
+      background: var(--bg); line-height: 1.7;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    .hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      color: white;
+      min-height: 460px;
+      padding: 64px 20px 52px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        linear-gradient(180deg, rgba(20, 24, 20, .38), rgba(20, 24, 20, .62)),
+        url("hero.jpg");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+    }
+    .hero > :not(.sidebar):not(.sidebar-overlay) {
+      position: relative;
+      z-index: 1;
+    }
+    .hero .tag {
+      display: inline-block; border: 1px solid rgba(255,255,255,.65);
+      background: rgba(20,35,28,.28);
+      padding: 5px 14px; border-radius: 30px; font-size: 13px; margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: clamp(30px, 5vw, 48px);
+      margin: 4px 0 10px;
+      text-shadow: 0 2px 12px rgba(0,0,0,.55);
+    }
+    .hero p {
+      max-width: 700px; margin: 0 auto 22px; color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,.7);
+    }
+    .hero a {
+      display: inline-block; text-decoration: none; color: #193b35;
+      background: var(--accent); padding: 11px 24px; border-radius: 12px; font-weight: bold;
+    }
+    @media (max-width: 580px) {
+      .hero {
+        min-height: 360px;
+        padding: 70px 18px 38px;
+        background-position: center center;
+      }
+    }
 
-<style>
-:root {
-  --primary:#176b63;
-  --primary-dark:#10534d;
-  --accent:#c6a15b;
-  --ink:#20312f;
-  --muted:#687875;
-  --bg:#f5efe4;
-  --card:#ffffff;
-  --line:#e2ebe7;
-  --shadow:0 12px 32px rgba(25,67,59,.09);
-}
+    .wrap { width: min(1160px, calc(100% - 32px)); margin: auto; }
+    .intro { padding: 34px 0 18px; text-align: center; }
+    .intro h2 { margin: 0 0 6px; font-size: 27px; }
+    .intro p { margin: 0; color: var(--muted); }
+    .toolbar {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; margin: 22px 0;
+    }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter {
+      border: 1px solid var(--line); background: white; color: var(--ink);
+      padding: 8px 15px; border-radius: 30px;
+    }
+    .filter.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .search {
+      border: 1px solid var(--line); background: white; border-radius: 12px;
+      padding: 10px 14px; min-width: min(100%, 250px); outline-color: var(--primary);
+    }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding-bottom: 44px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+      overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column;
+    }
+    .photo {
+      height: 170px; display: grid; place-items: center; position: relative;
+      color: white; font-size: 62px; background: linear-gradient(135deg, #398b7d, #164d49);
+    }
+    .photo.pool { background: linear-gradient(135deg, #48a9c2, #176b83); }
+    .photo.show { background: linear-gradient(135deg, #8b6ca8, #493b70); }
+    .photo.art { background: linear-gradient(135deg, #e4a75e, #a75b48); }
+    .photo.spa { background: linear-gradient(135deg, #79a98b, #376b59); }
+    .photo.boat { background: linear-gradient(135deg, #5b9cbd, #315a82); }
+    .photo.food { background: linear-gradient(135deg, #d49b52, #8a5637); }
+    .photo .category {
+      position: absolute; top: 12px; right: 12px; font-size: 12px;
+      background: rgba(0,0,0,.28); padding: 4px 10px; border-radius: 20px;
+    }
+    .card-body { padding: 17px; display: flex; flex-direction: column; flex: 1; }
+    .card h3 { margin: 0 0 5px; font-size: 20px; }
+    .location { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+    .desc { color: #52635f; font-size: 14px; margin: 0 0 14px; }
+    .features { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+    .feature {
+      background: #edf6f2; color: #245d52; border-radius: 8px;
+      padding: 4px 8px; font-size: 12px;
+    }
+    .feature.gold { background: #fff5e5; color: #8a5a19; }
+    .card-bottom { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .price { font-weight: bold; color: var(--primary-dark); }
+    .price small { display: block; color: var(--muted); font-weight: normal; font-size: 11px; }
+    .book {
+      border: 0; background: var(--primary); color: white; padding: 10px 16px;
+      border-radius: 10px; font-weight: bold;
+    }
+    .book:hover, .submit:hover { background: var(--primary-dark); }
+    .empty { display: none; text-align: center; padding: 30px; color: var(--muted); }
+    .access {
+      background: #eaf3ef; border-top: 1px solid #dbe9e2; padding: 30px 0;
+    }
+    .access h2 { margin-top: 0; }
+    .access-list { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .access-item { background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--line); }
+    footer { text-align: center; padding: 22px; color: var(--muted); font-size: 13px; }
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(10,25,22,.65);
+      z-index: 10; padding: 18px; overflow-y: auto; align-items: center; justify-content: center;
+    }
+    .modal.open { display: flex; }
+    .modal-box {
+      background: white; width: min(520px, 100%); border-radius: 18px;
+      padding: 24px; position: relative; box-shadow: 0 20px 60px #0003;
+    }
+    .close {
+      position: absolute; left: 15px; top: 12px; border: 0; background: #eef3f0;
+      width: 34px; height: 34px; border-radius: 50%; font-size: 20px;
+    }
+    .modal-box h2 { margin: 0 0 4px; }
+    .selected-name { color: var(--primary); margin: 0 0 15px; font-weight: bold; }
+    .field { margin: 12px 0; }
+    .field label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 1px solid #d8e3de; border-radius: 10px;
+      padding: 10px 12px; outline-color: var(--primary); background: white;
+    }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .submit { width: 100%; border: 0; background: var(--primary); color: white; padding: 12px; border-radius: 10px; font-weight: bold; margin-top: 8px; }
+    .ticket {
+      display: none; border: 2px dashed var(--primary); border-radius: 14px;
+      padding: 18px; margin-top: 15px; background: #f3faf6;
+    }
+    .ticket h3 { color: var(--primary-dark); margin: 0 0 8px; }
+    .ticket p { margin: 4px 0; font-size: 14px; }
+    .ticket-code { font-weight: bold; letter-spacing: 1px; color: #8a5a19; }
 
-* {
-  box-sizing:border-box;
-}
+    .top-nav { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:28px; }
+    .brand { color:#fff; text-decoration:none; font-size:22px; font-weight:900; letter-spacing:1px; }
+    .brand span { color:var(--accent); }
+    .nav-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .nav-links a { color:#fff; text-decoration:none; border:1px solid rgba(255,255,255,.4); padding:7px 14px; border-radius:25px; font-size:14px; }
+    .nav-links a:hover { background:rgba(255,255,255,.14); }
+    .survey-section { padding:42px 0; background:#fff; border-top:1px solid var(--line); }
+    .survey-intro { background:#eef6f2; border:1px solid #dcebe3; border-radius:16px; padding:18px; margin:18px 0 24px; }
+    .survey-form { display:grid; gap:18px; }
+    .survey-group { border:1px solid var(--line); border-radius:15px; padding:18px; background:#fff; }
+    .survey-group h3 { margin:0 0 14px; color:var(--primary-dark); font-size:20px; }
+    .survey-question { padding:13px 0; border-top:1px solid #edf1ef; }
+    .survey-question:first-of-type { border-top:0; }
+    .survey-question > label, .survey-question > .q-title { display:block; font-weight:bold; margin-bottom:9px; }
+    .options { display:flex; flex-wrap:wrap; gap:9px 16px; }
+    .options label { display:inline-flex; align-items:center; gap:6px; font-weight:normal; font-size:14px; cursor:pointer; }
+    .options input { accent-color:var(--primary); }
+    .survey-question input[type="text"], .survey-question textarea { width:100%; border:1px solid #d8e3de; border-radius:10px; padding:10px 12px; outline-color:var(--primary); }
+    .survey-submit { max-width:260px; border:0; background:var(--primary); color:#fff; padding:13px 20px; border-radius:11px; font-weight:bold; }
+    .survey-success { display:none; background:#eaf7ee; color:#205b37; border:1px solid #bfe2c9; border-radius:12px; padding:15px; margin-top:15px; }
+    @media (max-width:580px) { .top-nav { align-items:flex-start; flex-direction:column; } .nav-links { width:100%; } .nav-links a { flex:1; text-align:center; } }
 
-html {
-  scroll-behavior:smooth;
-}
+    body { padding-top: 0; }
+    .menu-toggle {
+      position: fixed; z-index: 50; top: 22px; right: 18px; width: 50px; height: 50px;
+      border: 0; border-radius: 13px; background: var(--accent); color: #173d37;
+      font-size: 25px; box-shadow: var(--shadow);
+    }
 
-body {
-  margin:0;
-  font-family:Tahoma,Arial,sans-serif;
-  color:var(--ink);
-  background:var(--bg);
-  line-height:1.8;
-}
+    .menu-toggle:focus-visible, .side-link:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .hero { width: 100%; }
+    .sidebar {
+      position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: 285px;
+      padding: 28px 18px; background: #123f3a; color: white;
+      transform: translateX(105%); transition: transform .25s ease;
+      box-shadow: -12px 0 35px rgba(0,0,0,.18);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-brand { font-size: 24px; font-weight: 900; text-align: center; margin: 14px 0 35px; letter-spacing: .5px; }
+    .sidebar-brand span { color: var(--accent); }
+    .side-link {
+      width: 100%; display: block; text-align: right; color: #f4fffb; background: transparent;
+      border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 14px 13px;
+      margin: 10px 0; font-weight: bold;
+    }
+    .side-link.active, .side-link:hover { background: #24786d; border-color: #24786d; }
+    .sidebar-note { position: absolute; bottom: 25px; right: 18px; left: 18px; text-align: center; color: #c5ded6; font-size: 12px; }
+    .sidebar-overlay { display:none; position:fixed; z-index:35; inset:0; background:rgba(0,0,0,.45); }
+    .sidebar-overlay.show { display:block; }
+    .page-panel[hidden] { display:none !important; }
+    .admin-panel { max-width:760px; margin:30px auto; background:#fff; border:1px solid var(--line); border-radius:18px; padding:26px; box-shadow:var(--shadow); }
+    .admin-notice { background:#fff7e6; border:1px solid #efd28a; color:#765313; padding:15px; border-radius:12px; line-height:1.8; }
+    .admin-lock { font-size:44px; text-align:center; margin:8px 0; }
+    .admin-panel .disabled-action { display:block; width:100%; margin-top:16px; padding:13px; border:0; border-radius:10px; background:#d8dfdc; color:#52635d; font-weight:bold; cursor:not-allowed; }
+    .gallery-section { min-height: 70vh; padding: 25px 0 55px; background: var(--bg); }
+    .gallery-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:20px 0 28px; }
+    .gallery-placeholder {
+      min-height:190px; border:2px dashed #b7cec5; border-radius:16px; background:#fff;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px;
+    }
+    .gallery-placeholder span { font-size:42px; margin-bottom:8px; }
+    .gallery-placeholder strong { color:var(--primary-dark); }
+    .gallery-placeholder small { color:var(--muted); margin-top:5px; }
+    .media-upload { background:white; border:1px solid var(--line); border-radius:16px; padding:20px; }
+    .media-upload h3 { margin-top:0; }
+    .media-preview { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:18px; }
+    .media-preview img, .media-preview video { width:100%; max-height:210px; object-fit:cover; border-radius:10px; background:#edf2ef; }
+    .media-preview figure { margin:0; }
+    .media-preview figcaption { font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
 
-button,input,select,textarea {
-  font:inherit;
-}
-
-button {
-  cursor:pointer;
-}
-
-.hidden {
-  display:none !important;
-}
-
-/* القائمة الجانبية */
-.menu-toggle {
-  position:fixed;
-  z-index:120;
-  top:16px;
-  right:16px;
-  width:56px;
-  height:56px;
-  border:0;
-  border-radius:14px;
-  background:var(--accent);
-  color:#172b27;
-  font-size:28px;
-}
-
-.sidebar {
-  position:fixed;
-  z-index:130;
-  top:0;
-  right:0;
-  width:290px;
-  height:100vh;
-  padding:25px 18px;
-  background:#fff;
-  box-shadow:var(--shadow);
-  transform:translateX(110%);
-  transition:transform .3s ease;
-  overflow-y:auto;
-}
-
-.sidebar.open {
-  transform:translateX(0);
-}
-
-.sidebar h2 {
-  text-align:center;
-  color:var(--primary);
-  margin:15px 0 25px;
-}
-
-.side-link {
-  display:block;
-  width:100%;
-  padding:13px 16px;
-  margin:8px 0;
-  text-align:right;
-  border:0;
-  border-radius:10px;
-  background:#f4f8f6;
-  color:var(--ink);
-}
-
-.side-link.active,
-.side-link:hover {
-  background:var(--primary);
-  color:white;
-}
-
-.overlay {
-  display:none;
-  position:fixed;
-  z-index:125;
-  inset:0;
-  background:rgba(0,0,0,.45);
-}
-
-.overlay.show {
-  display:block;
-}
-
-/* رأس الموقع */
-.hero {
-  min-height:405px;
-  padding:70px 20px;
-  text-align:center;
-  color:white;
-  background:linear-gradient(130deg,#153f39,#397b70);
-}
-
-.hero h1 {
-  font-size:clamp(32px,6vw,48px);
-  margin:12px 0;
-}
-
-.hero p {
-  max-width:750px;
-  margin:10px auto;
-  font-size:18px;
-  color:#e7f4f0;
-}
-
-.wrap {
-  width:min(1160px,calc(100% - 32px));
-  margin:auto;
-}
-
-.page {
-  min-height:350px;
-  padding:35px 0 55px;
-}
-
-.section-title {
-  text-align:center;
-  margin:0 0 25px;
-}
-
-.section-title h2 {
-  margin:0 0 8px;
-  color:var(--primary-dark);
-}
-
-.section-title p {
-  color:var(--muted);
-  margin:0;
-}
-
-/* الأزرار والحقول */
-.btn {
-  display:inline-block;
-  border:0;
-  border-radius:10px;
-  padding:11px 20px;
-  background:var(--primary);
-  color:white;
-}
-
-.btn:hover {
-  background:var(--primary-dark);
-}
-
-.btn.gold {
-  background:var(--accent);
-  color:#fff;
-}
-
-.btn.danger {
-  background:#b83232;
-}
-
-.field {
-  margin:14px 0;
-}
-
-.field label {
-  display:block;
-  font-weight:bold;
-  margin-bottom:6px;
-}
-
-.field input,
-.field select,
-.field textarea {
-  width:100%;
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#f8fafc;
-  color:var(--ink);
-}
-
-.field textarea {
-  resize:vertical;
-}
-
-/* البطاقات */
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-  gap:18px;
-}
-
-.card {
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:18px;
-  box-shadow:var(--shadow);
-}
-
-.card h3 {
-  margin-top:0;
-  color:var(--primary);
-}
-
-.card p {
-  color:var(--muted);
-}
-
-/* الوسائط */
-.media-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-  gap:16px;
-}
-
-.media-card {
-  overflow:hidden;
-  background:white;
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:10px;
-  box-shadow:var(--shadow);
-}
-
-.media-card img,
-.media-card video {
-  display:block;
-  width:100%;
-  height:210px;
-  object-fit:cover;
-  border-radius:9px;
-  background:#eee;
-}
-
-.media-card figcaption {
-  padding:8px 3px;
-  overflow-wrap:anywhere;
-}
-
-/* الاستبيان */
-.survey-group {
-  background:white;
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:16px;
-  margin:14px 0;
-}
-
-.survey-group h3 {
-  margin-top:0;
-}
-
-.options {
-  display:grid;
-  gap:9px;
-}
-
-.options label {
-  display:flex;
-  gap:9px;
-  align-items:center;
-}
-
-/* الإدارة */
-.admin-box {
-  max-width:650px;
-  margin:25px auto;
-  padding:22px;
-  background:white;
-  border:1px solid var(--line);
-  border-radius:16px;
-  box-shadow:var(--shadow);
-}
-
-.notice {
-  padding:14px;
-  margin:15px 0;
-  border-radius:10px;
-  background:#eef6f3;
-  color:#31564f;
-  overflow-wrap:anywhere;
-}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  background:white;
-  margin:15px 0;
-}
-
-th,td {
-  border:1px solid var(--line);
-  padding:9px;
-  text-align:right;
-  overflow-wrap:anywhere;
-}
-
-th {
-  background:#eaf3ef;
-}
-
-.table-wrap {
-  overflow-x:auto;
-}
-
-footer {
-  padding:25px 15px;
-  text-align:center;
-  color:var(--muted);
-}
-
-/* الهاتف */
-@media(max-width:600px) {
-  .hero {
-    min-height:380px;
-    padding-top:65px;
-  }
-
-  .sidebar {
-    width:min(290px,85vw);
-  }
-
-  .grid {
-    grid-template-columns:1fr;
-  }
-
-  .media-grid {
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-
-  .media-card img,
-  .media-card video {
-    height:150px;
-  }
-}
-</style>
+    @media (max-width: 850px) { .grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 580px) {
+      .grid, .access-list { grid-template-columns: 1fr; }
+      .toolbar { align-items: stretch; }
+      .search { width: 100%; }
+      .hero { padding-top: 40px; }
+    }
+  </style>
 </head>
-
 <body>
+    <button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة" aria-expanded="false">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar" aria-label="القائمة الجانبية">
+      <div class="sidebar-brand">SAKAN <span>RESORT</span></div>
+      <button class="side-link active" data-page="booking">🎟️ حجز التذاكر</button>
+      <button class="side-link" data-page="menu">🍽️ منيو المطعم</button>
+      <button class="side-link" data-page="survey">📝 الاستبيان</button>
+      <button class="side-link" data-page="gallery">📸 الصور والفيديوهات</button>
+      <button class="side-link" data-page="admin">🔐 إدارة الموقع</button>
+      <div class="sidebar-note">منتجع سياحي مهيأ للجميع</div>
+    </aside>
 
-<button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة">☰</button>
+  <header class="hero" id="top">
+    <span class="tag">منتجع شامل ومهيأ للجميع</span>
+    <h1>كل تجربة ليها مكان عندنا</h1>
+    <p>اختار النشاط اللي بتحبه، اعرف تجهيزات سهولة الوصول، واحجز تذكرتك أنت وأسرتك بسهولة.</p>
+    <a href="#activities">استكشف الأنشطة</a>
+  </header>
 
-<div class="overlay" id="overlay"></div>
+  <main>
+    <section class="wrap intro page-panel" id="activities" data-page="booking">
+      <h2>احجز تجربتك القادمة</h2>
+      <p>كل نشاط موضح معه وسائل الإتاحة والخدمات المتوفرة قبل الحجز.</p>
+    </section>
 
-<aside class="sidebar" id="sidebar">
-  <h2>SAKAN RESORT</h2>
+    <section class="wrap page-panel" id="bookingContent" data-page="booking">
+      <div class="toolbar">
+        <div class="filters" aria-label="تصفية الأنشطة">
+          <button class="filter active" data-filter="all">الكل</button>
+          <button class="filter" data-filter="water">أنشطة مائية</button>
+          <button class="filter" data-filter="entertainment">ترفيه</button>
+          <button class="filter" data-filter="wellness">استرخاء</button>
+          <button class="filter" data-filter="dining">مطاعم</button>
+        </div>
+        <input class="search" id="search" type="search" placeholder="ابحث عن نشاط..." aria-label="ابحث عن نشاط">
+      </div>
 
-  <button class="side-link active" data-page="home">🏠 الرئيسية</button>
-  <button class="side-link" data-page="booking">🎟️ الأنشطة والحجز</button>
-  <button class="side-link" data-page="menu">🍽️ المنيو</button>
-  <button class="side-link" data-page="gallery">🖼️ معرض الصور والفيديوهات</button>
-  <button class="side-link" data-page="survey">📝 الاستبيان</button>
-  <button class="side-link" data-page="admin">🔐 إدارة الموقع</button>
-</aside>
+      <div class="grid" id="activityGrid">
+        <article class="card" data-category="water" data-name="المسبح المهيأ">
+          <div class="photo pool"><span>🏊</span><span class="category">نشاط مائي</span></div>
+          <div class="card-body">
+            <h3>المسبح المهيأ</h3>
+            <div class="location">📍 منطقة المسابح</div>
+            <p class="desc">وقت ممتع وآمن في مسبح مجهز لتسهيل الدخول والخروج.</p>
+            <div class="features"><span class="feature">♿ منحدر وصول</span><span class="feature">🦽 كراسي مائية</span><span class="feature gold">مساعدة عند الطلب</span></div>
+            <div class="card-bottom"><div class="price">700 جنيه<small>للفرد / تذكرة يومية</small></div><button class="book" data-activity="المسبح المهيأ" data-price="700">احجز تيكت</button></div>
+          </div>
+        </article>
 
-<header class="hero">
-  <h1>SAKAN RESORT</h1>
-  <p>
-    كل تجربة ليها مكان عندنا — أنشطة وترفيه وخدمات مصممة
-    لتكون أكثر سهولة وراحة للجميع.
-  </p>
-</header>
+        <article class="card" data-category="entertainment" data-name="حفلة موسيقية وسينما">
+          <div class="photo show"><span>🎭</span><span class="category">ترفيه</span></div>
+          <div class="card-body">
+            <h3>حفلة موسيقية وسينما</h3>
+            <div class="location">📍 المسرح المفتوح</div>
+            <p class="desc">عروض فنية وسينمائية في مساحة مريحة ومجهزة.</p>
+            <div class="features"><span class="feature">♿ أماكن للكراسي</span><span class="feature">🦻 تجهيزات سمعية</span><span class="feature gold">وصف صوتي حسب العرض</span></div>
+            <div class="card-bottom"><div class="price">750 جنيه<small>للفرد / حسب الفعالية</small></div><button class="book" data-activity="حفلة موسيقية وسينما" data-price="750">احجز تيكت</button></div>
+          </div>
+        </article>
 
-<main class="wrap">
+        <article class="card" data-category="entertainment" data-name="ورشة فنية">
+          <div class="photo art"><span>🎨</span><span class="category">نشاط إبداعي</span></div>
+          <div class="card-body">
+            <h3>ورشة فنية</h3>
+            <div class="location">📍 مركز الأنشطة</div>
+            <p class="desc">جرّب الرسم والأعمال اليدوية في جلسة فنية ممتعة.</p>
+            <div class="features"><span class="feature">♿ طاولات مناسبة</span><span class="feature">🧑‍🤝‍🧑 مساعدون</span><span class="feature gold">أدوات متنوعة</span></div>
+            <div class="card-bottom"><div class="price">700 جنيه<small>للفرد / الجلسة</small></div><button class="book" data-activity="ورشة فنية" data-price="700">احجز تيكت</button></div>
+          </div>
+        </article>
+                <article class="card" data-category="wellness" data-name="العلاج الطبيعي والسبا">
+          <div class="photo spa"><span>🧖</span><span class="category">استرخاء</span></div>
+          <div class="card-body">
+            <h3>العلاج الطبيعي والسبا</h3>
+            <div class="location">📍 مركز العافية</div>
+            <p class="desc">جلسات استرخاء وعناية بالجسم في أجواء هادئة ومريحة.</p>
+            <div class="features">
+              <span class="feature">♿ دخول مهيأ</span>
+              <span class="feature">🧑‍⚕️ مختصون</span>
+              <span class="feature gold">حجز مسبق</span>
+            </div>
+            <div class="card-bottom">
+              <div class="price">900 جنيه<small>للفرد / الجلسة</small></div>
+              <button class="book" data-activity="العلاج الطبيعي والسبا" data-price="900">احجز تيكت</button>
+            </div>
+          </div>
+        </article>
 
-<section class="page" data-page="home">
-  <div class="section-title">
-    <h2>أهلاً بيكم في SAKAN RESORT</h2>
-    <p>تجربة ترفيهية مميزة ومناسبة للجميع</p>
-  </div>
+        <article class="card" data-category="entertainment" data-name="رحلة نيلية">
+          <div class="photo boat"><span>🚤</span><span class="category">رحلات</span></div>
+          <div class="card-body">
+            <h3>رحلة نيلية</h3>
+            <div class="location">📍 مرسى المنتجع</div>
+            <p class="desc">استمتع برحلة نيلية جميلة مع فريق متخصص للمساعدة.</p>
+            <div class="features">
+              <span class="feature">♿ مساعدة في الصعود</span>
+              <span class="feature">🦺 وسائل أمان</span>
+              <span class="feature gold">حسب حالة الطقس</span>
+            </div>
+            <div class="card-bottom">
+              <div class="price">850 جنيه<small>للفرد / الرحلة</small></div>
+              <button class="book" data-activity="رحلة نيلية" data-price="850">احجز تيكت</button>
+            </div>
+          </div>
+        </article>
 
-  <div class="grid">
-    <div class="card">
-      <h3>🎟️ الأنشطة والحجز</h3>
-      <p>اكتشف الأنشطة المتاحة واحجز تجربتك.</p>
-      <button class="btn" onclick="showPage('booking')">استكشف الأنشطة</button>
-    </div>
+        <article class="card" data-category="dining" data-name="مطعم المنتجع">
+          <div class="photo food"><span>🍽️</span><span class="category">مطاعم</span></div>
+          <div class="card-body">
+            <h3>مطعم المنتجع</h3>
+            <div class="location">📍 المطعم الرئيسي</div>
+            <p class="desc">استمتع بتجربة طعام متنوعة في مكان مريح ومناسب للجميع.</p>
+            <div class="features">
+              <span class="feature">♿ مداخل مهيأة</span>
+              <span class="feature">🍴 قائمة متنوعة</span>
+              <span class="feature gold">أماكن عائلية</span>
+            </div>
+            <div class="card-bottom">
+              <div class="price">حسب الطلب<small>قائمة أسعار المطعم</small></div>
+              <button class="book" data-activity="مطعم المنتجع" data-price="0">احجز تيكت</button>
+            </div>
+          </div>
+        </article>
+      </div>
+      <div class="empty" id="emptyMessage">مفيش أنشطة مطابقة للبحث.</div>
+    </section>
 
-    <div class="card">
-      <h3>🍽️ المنيو</h3>
-      <p>شاهد قائمة الطعام والمشروبات.</p>
-      <button class="btn" onclick="showPage('menu')">عرض المنيو</button>
-    </div>
+    <section class="access">
+      <div class="wrap">
+        <h2>الإتاحة والراحة للجميع</h2>
+        <div class="access-list">
+          <div class="access-item">♿ <strong>سهولة الحركة</strong><br>ممرات ومنحدرات وأماكن مخصصة للكراسي المتحركة.</div>
+          <div class="access-item">🦻 <strong>دعم سمعي</strong><br>تجهيزات ومساعدة حسب طبيعة النشاط.</div>
+          <div class="access-item">🤝 <strong>مساعدة شخصية</strong><br>فريق المنتجع متاح للمساعدة عند الحاجة.</div>
+        </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h3>🖼️ معرض الصور</h3>
-      <p>شاهد صور وفيديوهات المنتجع.</p>
-      <button class="btn" onclick="showPage('gallery')">افتح المعرض</button>
-    </div>
-  </div>
-</section>
+    <!-- نافذة حجز التذاكر -->
+    <div class="modal" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
+      <div class="modal-box">
+        <button class="close" id="closeBooking" aria-label="إغلاق">×</button>
+        <h2 id="bookingTitle">حجز تذكرة</h2>
+        <p class="selected-name" id="selectedActivity"></p>
 
-<section class="page hidden" data-page="booking">
-  <div class="section-title">
-    <h2>الأنشطة والحجز</h2>
-    <p>اختار النشاط المناسب ليك واحجز تذكرتك.</p>
-  </div>
+        <form id="bookingForm">
+          <div class="field">
+            <label for="customerName">الاسم بالكامل</label>
+            <input id="customerName" type="text" required placeholder="اكتب اسمك">
+          </div>
+          <div class="field">
+            <label for="customerPhone">رقم الموبايل</label>
+            <input id="customerPhone" type="tel" required placeholder="رقم للتواصل">
+          </div>
+          <div class="field">
+            <label for="bookingDate">تاريخ الحجز</label>
+            <input id="bookingDate" type="date" required>
+          </div>
+          <div class="field">
+            <label for="ticketCount">عدد التذاكر</label>
+            <input id="ticketCount" type="number" min="1" max="20" value="1" required>
+          </div>
+          <div class="field">
+            <label for="bookingNotes">ملاحظات أو طلبات خاصة</label>
+            <textarea id="bookingNotes" placeholder="اكتب أي مساعدة تحتاجها أثناء النشاط"></textarea>
+          </div>
+          <button class="submit" type="submit">تأكيد طلب الحجز</button>
+        </form>
 
-  <div class="toolbar">
-    <input id="search" class="field" type="search" placeholder="ابحث عن نشاط...">
-    <div class="filters">
-      <button class="filter active" data-filter="all">الكل</button>
-      <button class="filter" data-filter="water">أنشطة مائية</button>
-      <button class="filter" data-filter="sport">أنشطة رياضية</button>
-      <button class="filter" data-filter="family">أنشطة عائلية</button>
-    </div>
-  </div>
-
-  <div class="grid" id="activityGrid">
-    <article class="card" data-category="water">
-      <h3>🏊 حمام السباحة</h3>
-      <p>استمتع بوقت مميز في حمام السباحة.</p>
-      <p>السعر: 150 جنيه للفرد</p>
-      <button class="btn book" data-activity="حمام السباحة" data-price="150">احجز الآن</button>
-    </article>
-
-    <article class="card" data-category="sport">
-      <h3>⚽ الأنشطة الرياضية</h3>
-      <p>مجموعة من الأنشطة الرياضية والترفيهية.</p>
-      <p>السعر: 100 جنيه للفرد</p>
-      <button class="btn book" data-activity="الأنشطة الرياضية" data-price="100">احجز الآن</button>
-    </article>
-
-    <article class="card" data-category="family">
-      <h3>👨‍👩‍👧‍👦 الأنشطة العائلية</h3>
-      <p>أنشطة ممتعة للعائلات والأصدقاء.</p>
-      <p>السعر: 120 جنيه للفرد</p>
-      <button class="btn book" data-activity="الأنشطة العائلية" data-price="120">احجز الآن</button>
-    </article>
-  </div>
-
-  <p id="noActivities" class="notice hidden">لا توجد أنشطة مطابقة للبحث.</p>
-</section>
-
-<section class="page hidden" data-page="menu">
-  <div class="section-title">
-    <h2>منيو SAKAN RESORT</h2>
-    <p>قائمة الطعام والمشروبات</p>
-  </div>
-
-  <div class="admin-only hidden">
-    <div class="card">
-      <h3>إضافة صور المنيو</h3>
-      <input id="menuFiles" type="file" accept="image/*" multiple>
-      <button class="btn gold" id="uploadMenu">رفع صور المنيو</button>
-    </div>
-  </div>
-
-  <div id="menuGrid" class="media-grid"></div>
-  <p id="menuEmpty" class="notice hidden">لا توجد صور منيو مرفوعة حتى الآن.</p>
-</section>
-
-<section class="page hidden" data-page="gallery">
-  <div class="section-title">
-    <h2>معرض الصور والفيديوهات</h2>
-    <p>لحظات وذكريات من SAKAN RESORT</p>
-  </div>
-
-  <div class="admin-only hidden">
-    <div class="card">
-      <h3>إضافة صور أو فيديوهات</h3>
-      <input id="galleryFiles" type="file" accept="image/*,video/*" multiple>
-      <button class="btn gold" id="uploadGallery">رفع ملفات المعرض</button>
-    </div>
-  </div>
-
-  <div id="galleryGrid" class="media-grid"></div>
-  <p id="galleryEmpty" class="notice hidden">لا توجد صور أو فيديوهات في المعرض حتى الآن.</p>
-</section>
-<section class="page hidden" data-page="survey">
-  <div class="section-title">
-    <h2>استبيان SAKAN RESORT</h2>
-    <p>رأيك يهمنا ويساعدنا نقدم تجربة أفضل للجميع.</p>
-  </div>
-
-  <div class="card">
-    <form id="surveyForm"></form>
-    <button class="btn" type="button" id="surveySubmit">
-      إرسال الاستبيان
-    </button>
-    <p id="surveyMessage" class="notice hidden"></p>
-  </div>
-</section>
-
-<section class="page hidden" data-page="admin">
-  <div class="section-title">
-    <h2>إدارة الموقع</h2>
-    <p>تسجيل دخول المسؤول وإدارة محتوى المنتجع.</p>
-  </div>
-
-  <div class="admin-box" id="loginPanel">
-    <h3>تسجيل دخول الإدارة</h3>
-
-    <div class="field">
-      <label for="adminEmail">البريد الإلكتروني</label>
-      <input id="adminEmail" type="email" autocomplete="username">
-    </div>
-
-    <div class="field">
-      <label for="adminPassword">كلمة المرور</label>
-      <input id="adminPassword" type="password" autocomplete="current-password">
-    </div>
-
-    <button class="btn" id="loginButton" type="button">
-      تسجيل الدخول
-    </button>
-
-    <p id="adminMessage" class="notice hidden"></p>
-  </div>
-
-  <div id="adminPanel" class="hidden">
-
-    <div class="card">
-      <h3>حالة الإدارة</h3>
-      <p id="adminStatus"></p>
-      <button class="btn danger" id="logoutButton" type="button">
-        تسجيل الخروج
-      </button>
-    </div>
-
-    <div class="card">
-      <h3>طلبات الحجز</h3>
-      <div class="table-wrap" id="bookingsList">
-        جارٍ تحميل طلبات الحجز...
+        <div class="ticket" id="ticketResult">
+          <h3>تم تسجيل طلب الحجز على الصفحة</h3>
+          <p>الاسم: <strong id="ticketCustomer"></strong></p>
+          <p>النشاط: <strong id="ticketActivity"></strong></p>
+          <p>التاريخ: <strong id="ticketDate"></strong></p>
+          <p>عدد التذاكر: <strong id="ticketCountResult"></strong></p>
+          <p>الإجمالي: <strong id="ticketTotal"></strong></p>
+          <p>رقم الطلب: <span class="ticket-code" id="ticketCode"></span></p>
+          <p>احتفظ برقم الطلب. الحجز غير مؤكد نهائيًا إلا بعد مراجعة إدارة المنتجع.</p>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <h3>ردود الاستبيان</h3>
-      <div class="table-wrap" id="surveysList">
-        جارٍ تحميل ردود الاستبيان...
+    <!-- صفحة منيو المطعم -->
+    <section class="page-panel" id="menuPage" data-page="menu" hidden>
+      <div class="wrap gallery-section">
+        <div class="intro">
+          <h2>🍽️ منيو مطعم SAKAN RESORT</h2>
+          <p>تعرّف على قائمة الطعام والمشروبات المتاحة في المطعم.</p>
+        </div>
+        <div class="admin-panel">
+          <h3>قائمة المطعم</h3>
+          <div class="admin-notice">
+            قسم المنيو جاهز لإضافة الأصناف والصور والأسعار.
+            سيتم ربط القائمة بلوحة الإدارة وقاعدة بيانات Supabase في الخطوات القادمة.
+          </div>
+          <p>لم تتم إضافة أصناف أو أسعار فعلية حتى الآن.</p>
+        </div>
       </div>
-    </div>
+    </section>
 
-  </div>
-</section>
+    <!-- صفحة معرض الصور والفيديوهات -->
+    <section class="page-panel" id="galleryPage" data-page="gallery" hidden>
+      <div class="gallery-section">
+        <div class="wrap">
+          <div class="intro">
+            <h2>📸 الصور والفيديوهات</h2>
+            <p>شاهد لحظات وتجارب منتجع SAKAN RESORT.</p>
+          </div>
 
-</main>
+          <div class="gallery-grid">
+            <div class="gallery-placeholder">
+              <span>🏊</span>
+              <strong>صور الأنشطة</strong>
+              <small>سيتم عرض صور الأنشطة هنا بعد ربط التخزين.</small>
+            </div>
+            <div class="gallery-placeholder">
+              <span>🌴</span>
+              <strong>صور المنتجع</strong>
+              <small>سيتم عرض صور المكان هنا بعد إضافة الملفات.</small>
+            </div>
+            <div class="gallery-placeholder">
+              <span>🎬</span>
+              <strong>فيديوهات المنتجع</strong>
+              <small>سيتم عرض الفيديوهات هنا بعد ربط التخزين.</small>
+            </div>
+          </div>
 
-<footer>
-  © 2026 SAKAN RESORT — جميع الحقوق محفوظة
-</footer>
-
-<!-- نافذة الحجز -->
-<div class="modal hidden" id="bookingModal">
-  <div class="admin-box">
-    <button class="btn danger" id="closeBooking" type="button">
-      إغلاق ✕
-    </button>
-
-    <h2>احجز تذكرتك</h2>
-    <p id="chosenActivity"></p>
-
-    <form id="bookingForm">
-
-      <div class="field">
-        <label>اسم الزائر</label>
-        <input name="visitor_name" required maxlength="120">
+          <div class="media-upload">
+            <h3>إضافة الصور والفيديوهات</h3>
+            <div class="admin-notice">
+              رفع الملفات غير مفعّل حاليًا. سيتم تفعيله من لوحة الإدارة بعد إعداد تسجيل الدخول وصلاحيات Supabase، حتى لا يستطيع أي زائر رفع ملفات إلى الموقع.
+            </div>
+            <div class="field">
+              <label for="mediaFiles">اختيار ملفات (غير مفعّل حاليًا)</label>
+              <input id="mediaFiles" type="file" accept="image/*,video/*" disabled>
+            </div>
+            <div class="media-preview" id="mediaPreview"></div>
+          </div>
+        </div>
       </div>
+    </section>
+        <!-- صفحة الاستبيان -->
+    <section class="page-panel survey-section" id="surveyPage" data-page="survey" hidden>
+      <div class="wrap">
+        <div class="intro">
+          <h2>📝 استبيان تقييم تجربة SAKAN RESORT</h2>
+          <p>رأيك يهمنا ويساعدنا نقدم تجربة أفضل للجميع.</p>
+        </div>
 
-      <div class="field">
-        <label>رقم الهاتف</label>
-        <input name="phone" type="tel" required maxlength="30">
+        <div class="survey-intro">
+          <strong>شاركنا رأيك بكل صراحة.</strong>
+          <p>الاستبيان مكوّن من 30 سؤالًا، ويمكنك إرسال تقييمك بعد الانتهاء.</p>
+        </div>
+
+        <form id="surveyForm" class="survey-form">
+
+          <div class="survey-group">
+            <h3>أولًا: معلومات الزيارة</h3>
+
+            <div class="survey-question">
+              <label for="surveyName">1- الاسم (اختياري)</label>
+              <input type="text" id="surveyName" name="surveyName" placeholder="اكتب اسمك">
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">2- هل هذه أول زيارة لك للمنتجع؟</span>
+              <div class="options">
+                <label><input type="radio" name="q2" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q2" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">3- مع من زرت المنتجع؟</span>
+              <div class="options">
+                <label><input type="radio" name="q3" value="العائلة" required> العائلة</label>
+                <label><input type="radio" name="q3" value="الأصدقاء"> الأصدقاء</label>
+                <label><input type="radio" name="q3" value="بمفردي"> بمفردي</label>
+                <label><input type="radio" name="q3" value="أخرى"> أخرى</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">4- كيف عرفت عن المنتجع؟</span>
+              <div class="options">
+                <label><input type="radio" name="q4" value="السوشيال ميديا" required> السوشيال ميديا</label>
+                <label><input type="radio" name="q4" value="الأصدقاء"> الأصدقاء</label>
+                <label><input type="radio" name="q4" value="الإعلانات"> الإعلانات</label>
+                <label><input type="radio" name="q4" value="أخرى"> أخرى</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">5- ما تقييمك العام للزيارة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q5" value="ممتازة" required> ممتازة</label>
+                <label><input type="radio" name="q5" value="جيدة جدًا"> جيدة جدًا</label>
+                <label><input type="radio" name="q5" value="جيدة"> جيدة</label>
+                <label><input type="radio" name="q5" value="متوسطة"> متوسطة</label>
+                <label><input type="radio" name="q5" value="سيئة"> سيئة</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="survey-group">
+            <h3>ثانيًا: الخدمات والأنشطة</h3>
+
+            <div class="survey-question">
+              <span class="q-title">6- كيف تقيّم نظافة المنتجع؟</span>
+              <div class="options">
+                <label><input type="radio" name="q6" value="ممتازة" required> ممتازة</label>
+                <label><input type="radio" name="q6" value="جيدة جدًا"> جيدة جدًا</label>
+                <label><input type="radio" name="q6" value="جيدة"> جيدة</label>
+                <label><input type="radio" name="q6" value="ضعيفة"> ضعيفة</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">7- كيف تقيّم تعامل الموظفين؟</span>
+              <div class="options">
+                <label><input type="radio" name="q7" value="ممتاز" required> ممتاز</label>
+                <label><input type="radio" name="q7" value="جيد جدًا"> جيد جدًا</label>
+                <label><input type="radio" name="q7" value="جيد"> جيد</label>
+                <label><input type="radio" name="q7" value="ضعيف"> ضعيف</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">8- هل كانت الأنشطة متنوعة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q8" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q8" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q8" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">9- ما رأيك في أسعار الأنشطة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q9" value="مناسبة" required> مناسبة</label>
+                <label><input type="radio" name="q9" value="مرتفعة"> مرتفعة</label>
+                <label><input type="radio" name="q9" value="منخفضة"> منخفضة</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">10- هل كانت عملية الحجز سهلة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q10" value="سهلة جدًا" required> سهلة جدًا</label>
+                <label><input type="radio" name="q10" value="سهلة"> سهلة</label>
+                <label><input type="radio" name="q10" value="صعبة"> صعبة</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="survey-group">
+            <h3>ثالثًا: سهولة الوصول والإتاحة</h3>
+
+            <div class="survey-question">
+              <span class="q-title">11- هل المداخل مناسبة وسهلة الوصول؟</span>
+              <div class="options">
+                <label><input type="radio" name="q11" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q11" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q11" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">12- هل الممرات مريحة وآمنة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q12" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q12" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q12" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">13- هل توجد أماكن مناسبة للكراسي المتحركة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q13" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q13" value="بعض الأماكن"> بعض الأماكن</label>
+                <label><input type="radio" name="q13" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">14- هل دورات المياه مناسبة وسهلة الاستخدام؟</span>
+              <div class="options">
+                <label><input type="radio" name="q14" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q14" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q14" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">15- هل حصلت على المساعدة عند الحاجة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q15" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q15" value="لا" > لا</label>
+                <label><input type="radio" name="q15" value="لم أحتج للمساعدة"> لم أحتج للمساعدة</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="survey-group">
+            <h3>رابعًا: الراحة والأمان</h3>
+
+            <div class="survey-question">
+              <span class="q-title">16- هل شعرت بالأمان داخل المنتجع؟</span>
+              <div class="options">
+                <label><input type="radio" name="q16" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q16" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q16" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">17- كيف تقيّم مستوى الراحة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q17" value="ممتاز" required> ممتاز</label>
+                <label><input type="radio" name="q17" value="جيد جدًا"> جيد جدًا</label>
+                <label><input type="radio" name="q17" value="جيد"> جيد</label>
+                <label><input type="radio" name="q17" value="ضعيف"> ضعيف</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">18- هل كانت الإرشادات واضحة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q18" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q18" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q18" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">19- هل أماكن الجلوس والاستراحة كافية؟</span>
+              <div class="options">
+                <label><input type="radio" name="q19" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q19" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q19" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">20- هل أوقات الانتظار كانت مقبولة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q20" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q20" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q20" value="لا"> لا</label>
+              </div>
+            </div>
+                  </div>
+                            <div class="survey-group">
+            <h3>خامسًا: المطعم والخدمات الإضافية</h3>
+
+            <div class="survey-question">
+              <span class="q-title">21- كيف تقيّم جودة الطعام؟</span>
+              <div class="options">
+                <label><input type="radio" name="q21" value="ممتازة" required> ممتازة</label>
+                <label><input type="radio" name="q21" value="جيدة جدًا"> جيدة جدًا</label>
+                <label><input type="radio" name="q21" value="جيدة"> جيدة</label>
+                <label><input type="radio" name="q21" value="ضعيفة"> ضعيفة</label>
+                <label><input type="radio" name="q21" value="لم أجرب المطعم"> لم أجرب المطعم</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">22- هل أسعار المطعم مناسبة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q22" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q22" value="مرتفعة"> مرتفعة</label>
+                <label><input type="radio" name="q22" value="منخفضة"> منخفضة</label>
+                <label><input type="radio" name="q22" value="لم أجرب المطعم"> لم أجرب المطعم</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">23- كيف تقيّم تنوع قائمة الطعام؟</span>
+              <div class="options">
+                <label><input type="radio" name="q23" value="ممتاز" required> ممتاز</label>
+                <label><input type="radio" name="q23" value="جيد"> جيد</label>
+                <label><input type="radio" name="q23" value="محدود"> محدود</label>
+                <label><input type="radio" name="q23" value="لم أطلع عليها"> لم أطلع عليها</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">24- هل الخدمات الإضافية متوفرة بشكل جيد؟</span>
+              <div class="options">
+                <label><input type="radio" name="q24" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q24" value="إلى حد ما"> إلى حد ما</label>
+                <label><input type="radio" name="q24" value="لا"> لا</label>
+            </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">25- هل فريق العمل متعاون عند طلب الخدمة؟</span>
+              <div class="options">
+                <label><input type="radio" name="q25" value="دائمًا" required> دائمًا</label>
+                <label><input type="radio" name="q25" value="أحيانًا"> أحيانًا</label>
+                <label><input type="radio" name="q25" value="نادرًا"> نادرًا</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="survey-group">
+            <h3>سادسًا: التقييم النهائي والمقترحات</h3>
+
+            <div class="survey-question">
+              <span class="q-title">26- هل تنصح الآخرين بزيارة المنتجع؟</span>
+              <div class="options">
+                <label><input type="radio" name="q26" value="بالتأكيد" required> بالتأكيد</label>
+                <label><input type="radio" name="q26" value="ربما"> ربما</label>
+                <label><input type="radio" name="q26" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">27- هل ترغب في زيارة المنتجع مرة أخرى؟</span>
+              <div class="options">
+                <label><input type="radio" name="q27" value="نعم" required> نعم</label>
+                <label><input type="radio" name="q27" value="ربما"> ربما</label>
+                <label><input type="radio" name="q27" value="لا"> لا</label>
+              </div>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">28- ما أكثر شيء أعجبك في المنتجع؟</span>
+              <input type="text" name="q28" placeholder="اكتب إجابتك">
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">29- ما الشيء الذي تقترح تحسينه؟</span>
+              <textarea name="q29" placeholder="اكتب اقتراحك هنا"></textarea>
+            </div>
+
+            <div class="survey-question">
+              <span class="q-title">30- هل لديك أي ملاحظات أخرى؟</span>
+              <textarea name="q30" placeholder="مساحة مفتوحة لكتابة ملاحظاتك"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="survey-submit">إرسال الاستبيان</button>
+          <div class="survey-success" id="surveySuccess">
+            شكرًا لمشاركتك! تم استلام إجاباتك في هذه الصفحة.
+          </div>
+        </form>
       </div>
+    </section>
 
-      <div class="field">
-        <label>تاريخ الزيارة</label>
-        <input name="visit_date" type="date" required>
+    <!-- صفحة إدارة الموقع -->
+    <section class="page-panel" id="adminPage" data-page="admin" hidden>
+      <div class="wrap gallery-section">
+        <div class="intro">
+          <h2>🔐 إدارة موقع SAKAN RESORT</h2>
+          <p>لوحة تحكم خاصة بمسؤول الموقع.</p>
+        </div>
+
+        <div class="admin-panel">
+          <div class="admin-lock">🔒</div>
+          <h2 style="text-align:center">منطقة إدارة الموقع</h2>
+
+          <div class="admin-notice">
+            <strong>تنبيه أمني:</strong>
+            هذه الصفحة واجهة مبدئية فقط. لم يتم تفعيل تسجيل الدخول أو صلاحيات الإدارة حتى الآن.
+            لن يتم السماح برفع الملفات أو تعديل محتوى الموقع قبل إعداد Supabase Auth
+            وسياسات الحماية الخاصة بقاعدة البيانات والتخزين.
+          </div>
+
+          <h3>أقسام الإدارة التي سيتم تفعيلها</h3>
+          <div class="access-list">
+            <div class="access-item">
+              📸 <strong>إدارة الصور والفيديوهات</strong>
+              <p>إضافة الصور والفيديوهات وحذفها وتنظيم المعرض.</p>
+            </div>
+            <div class="access-item">
+              🍽️ <strong>إدارة منيو المطعم</strong>
+              <p>إضافة الأصناف والأسعار والصور وتعديلها.</p>
+            </div>
+            <div class="access-item">
+              🎟️ <strong>إدارة الحجوزات</strong>
+              <p>مراجعة طلبات الحجز ومتابعتها.</p>
+            </div>
+            <div class="access-item">
+              📝 <strong>إدارة الاستبيانات</strong>
+              <p>الاطلاع على الردود والتقييمات.</p>
+            </div>
+            <div class="access-item">
+              🏨 <strong>إدارة محتوى الموقع</strong>
+              <p>تحديث بيانات الأنشطة والمعلومات المعروضة.</p>
+            </div>
+            <div class="access-item">
+              🔐 <strong>صلاحيات المسؤول</strong>
+              <p>تحديد من يستطيع الدخول والتعديل والرفع.</p>
+            </div>
+          </div>
+
+          <button type="button" class="disabled-action" disabled>
+            تسجيل دخول المسؤول — سيتم تفعيله بعد ربط Supabase
+          </button>
+        </div>
       </div>
+    </section>
 
-      <div class="field">
-        <label>عدد التذاكر</label>
-        <select name="quantity">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-        </select>
-      </div>
+  </main>
 
-      <div class="field">
-        <label>تجهيزات أو مساعدة مطلوبة</label>
-        <textarea name="access_needs" rows="3"></textarea>
-      </div>
-
-      <button class="btn" type="submit">
-        إرسال طلب الحجز
-      </button>
-
-    </form>
-
-    <div id="bookingResult" class="notice hidden"></div>
-  </div>
-</div>
-
-<script>
+  <footer>
+    © 2026 SAKAN RESORT — جميع الحقوق محفوظة
+  </footer>
+    <script>
     // ==========================================
-// إعدادات Supabase
-// ==========================================
+    // التنقل بين صفحات الموقع والقائمة الجانبية
+    // ==========================================
 
-const SUPABASE_URL = 'https://dwajvnwrfnzutofisbau.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_nvJ_d9WQW0b3fNZ_swNJjQXNYWZVpk';
-const BUCKET = 'resort-media';
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sideLinks = document.querySelectorAll('.side-link');
+    const pagePanels = document.querySelectorAll('.page-panel');
 
-const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('show');
+      menuToggle.setAttribute('aria-expanded', 'true');
+    }
 
-let currentUser = null;
-let chosen = { name: '', price: 0 };
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('show');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    }
 
-// ==========================================
-// أدوات مساعدة
-// ==========================================
-
-function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, char => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[char]));
-}
-
-function showMessage(element, message, isError = false) {
-    if (!element) return;
-
-    element.textContent = message;
-    element.classList.remove('hidden');
-
-    element.style.background = isError ? '#ffe8e8' : '#eef6f3';
-    element.style.color = isError ? '#a32323' : '#31564f';
-}
-
-function localToday() {
-    const date = new Date();
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-    return date.toISOString().slice(0, 10);
-}
-
-// ==========================================
-// القائمة الجانبية والتنقل
-// ==========================================
-
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('overlay');
-
-function openSidebar() {
-    sidebar.classList.add('open');
-    overlay.classList.add('show');
-}
-
-function closeSidebar() {
-    sidebar.classList.remove('open');
-    overlay.classList.remove('show');
-}
-
-document.getElementById('menuToggle').addEventListener('click', () => {
-    if (sidebar.classList.contains('open')) {
+    menuToggle.addEventListener('click', () => {
+      if (sidebar.classList.contains('open')) {
         closeSidebar();
-    } else {
+      } else {
         openSidebar();
-    }
-});
-
-overlay.addEventListener('click', closeSidebar);
-
-function showPage(page) {
-    document.querySelectorAll('.page').forEach(section => {
-        section.classList.toggle(
-            'hidden',
-            section.dataset.page !== page
-        );
+      }
     });
 
-    document.querySelectorAll('.side-link').forEach(button => {
-        button.classList.toggle(
-            'active',
-            button.dataset.page === page
-        );
-    });
+    sidebarOverlay.addEventListener('click', closeSidebar);
 
-    closeSidebar();
+    function showPage(pageName) {
+      pagePanels.forEach(panel => {
+        panel.hidden = panel.dataset.page !== pageName;
+      });
 
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
+      sideLinks.forEach(link => {
+        link.classList.toggle('active', link.dataset.page === pageName);
+      });
 
-    if (page === 'menu') {
-        loadMedia('menu');
+      closeSidebar();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    if (page === 'gallery') {
-        loadMedia('gallery');
-    }
-
-    if (page === 'admin' && currentUser) {
-        loadAdmin();
-    }
-}
-
-document.querySelectorAll('.side-link').forEach(button => {
-    button.addEventListener('click', () => {
-        showPage(button.dataset.page);
+    sideLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        showPage(link.dataset.page);
+      });
     });
-});
 
-// ==========================================
-// البحث وتصنيف الأنشطة
-// ==========================================
+    // ==========================================
+    // تصفية الأنشطة والبحث
+    // ==========================================
 
-let activityFilter = 'all';
+    const filterButtons = document.querySelectorAll('.filter');
+    const activityCards = document.querySelectorAll('#activityGrid .card');
+    const searchInput = document.getElementById('search');
+    const emptyMessage = document.getElementById('emptyMessage');
 
-document.querySelectorAll('.filter').forEach(button => {
-    button.addEventListener('click', () => {
-        activityFilter = button.dataset.filter;
+    let currentFilter = 'all';
 
-        document.querySelectorAll('.filter').forEach(item => {
-            item.classList.toggle('active', item === button);
-        });
+    function filterActivities() {
+      const searchText = searchInput.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      activityCards.forEach(card => {
+        const category = card.dataset.category;
+        const name = card.dataset.name.toLowerCase();
+
+        const matchesCategory =
+          currentFilter === 'all' || category === currentFilter;
+
+        const matchesSearch = name.includes(searchText);
+
+        const visible = matchesCategory && matchesSearch;
+
+        card.style.display = visible ? 'flex' : 'none';
+
+        if (visible) visibleCount++;
+      });
+
+      emptyMessage.style.display = visibleCount ? 'none' : 'block';
+    }
+
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        filterButtons.forEach(item => item.classList.remove('active'));
+
+        button.classList.add('active');
+        currentFilter = button.dataset.filter;
 
         filterActivities();
-    });
-});
-
-document.getElementById('search').addEventListener('input', filterActivities);
-
-function filterActivities() {
-    const search = document.getElementById('search').value.toLowerCase();
-    let visible = 0;
-
-    document.querySelectorAll('#activityGrid .card').forEach(card => {
-        const categoryMatch =
-            activityFilter === 'all' ||
-            card.dataset.category === activityFilter;
-
-        const searchMatch =
-            card.innerText.toLowerCase().includes(search);
-
-        const show = categoryMatch && searchMatch;
-
-        card.classList.toggle('hidden', !show);
-
-        if (show) visible++;
+      });
     });
 
-    document.getElementById('noActivities')
-        .classList.toggle('hidden', visible > 0);
-}
+    searchInput.addEventListener('input', filterActivities);
 
-// ==========================================
-// الحجز
-// ==========================================
+    // ==========================================
+    // نظام طلب حجز التذاكر
+    // ==========================================
 
-const bookingModal = document.getElementById('bookingModal');
-const bookingForm = document.getElementById('bookingForm');
+    const bookingModal = document.getElementById('bookingModal');
+    const bookingForm = document.getElementById('bookingForm');
+    const closeBooking = document.getElementById('closeBooking');
 
-document.querySelectorAll('.book').forEach(button => {
-    button.addEventListener('click', () => {
-        chosen = {
-            name: button.dataset.activity,
-            price: Number(button.dataset.price)
-        };
+    const selectedActivity = document.getElementById('selectedActivity');
+    const ticketResult = document.getElementById('ticketResult');
 
-        document.getElementById('chosenActivity').textContent =
-            chosen.name + ' — ' + chosen.price + ' جنيه للفرد';
+    let selectedPrice = 0;
+    let selectedActivityName = '';
+
+    document.querySelectorAll('.book').forEach(button => {
+      button.addEventListener('click', () => {
+        selectedActivityName = button.dataset.activity;
+        selectedPrice = Number(button.dataset.price);
+
+        selectedActivity.textContent = selectedActivityName;
 
         bookingForm.reset();
+        ticketResult.style.display = 'none';
+        bookingForm.style.display = 'block';
 
-        bookingForm.querySelector('[name="visit_date"]').min = localToday();
-
-        document.getElementById('bookingResult').classList.add('hidden');
-
-        bookingForm.classList.remove('hidden');
-
-        bookingModal.classList.remove('hidden');
-    });
-});
-
-document.getElementById('closeBooking').addEventListener('click', () => {
-    bookingModal.classList.add('hidden');
-});
-
-bookingForm.addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const formData = new FormData(bookingForm);
-    const quantity = Number(formData.get('quantity'));
-
-    const record = {
-        activity: chosen.name,
-        visitor_name: String(formData.get('visitor_name') || '').trim(),
-        phone: String(formData.get('phone') || '').trim(),
-        visit_date: formData.get('visit_date'),
-        quantity: quantity,
-        access_needs: formData.get('access_needs'),
-        total: chosen.price * quantity
-    };
-
-    const submitButton = bookingForm.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = 'جارٍ إرسال الطلب...';
-
-    try {
-        const { data, error } = await db
-            .from('bookings')
-            .insert(record)
-            .select('id')
-            .single();
-
-        if (error) throw error;
-
-        bookingForm.classList.add('hidden');
-
-        const result = document.getElementById('bookingResult');
-
-        result.innerHTML = `
-            <h3>تم استلام طلب الحجز بنجاح 🎉</h3>
-            <p>كود الطلب: <b>${escapeHtml(data.id)}</b></p>
-            <p>النشاط: ${escapeHtml(record.activity)}</p>
-            <p>عدد التذاكر: ${quantity}</p>
-            <p>الإجمالي: ${record.total} جنيه</p>
-            <p>طلبك في انتظار تأكيد إدارة المنتجع.</p>
-        `;
-
-        result.classList.remove('hidden');
-
-    } catch (error) {
-        alert('تعذر حفظ الحجز: ' + error.message);
-
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = 'إرسال طلب الحجز';
-    }
-});
-
-// ==========================================
-// الاستبيان - 30 سؤالًا
-// ==========================================
-
-const questions = [
-    ['1. الاسم (اختياري)', 'text'],
-    ['2. العمر', ['أقل من 18 سنة', 'من 18 إلى 25 سنة', 'من 26 إلى 35 سنة', 'من 36 إلى 45 سنة', 'أكثر من 45 سنة']],
-    ['3. النوع', ['ذكر', 'أنثى']],
-    ['4. محل الإقامة', ['القاهرة', 'الإسكندرية', 'الدلتا', 'الصعيد', 'مدن القناة وسيناء', 'أخرى']],
-    ['5. هل سبق لك التعامل أو السفر مع شخص من ذوي الهمم؟', ['نعم', 'لا']],
-    ['6. ما نوع الإقامة السياحية التي تفضلها؟', ['الفنادق', 'المنتجعات السياحية', 'الشاليهات', 'القرى السياحية']],
-    ['7. ما المدة التي تفضل قضاءها في المنتجع؟', ['يوم واحد', 'من يومين إلى 3 أيام', 'من 4 إلى 7 أيام', 'أكثر من أسبوع']],
-    ['8. ما أهم العوامل التي تؤثر على اختيارك لمكان الإقامة؟', ['مستوى النظافة', 'جودة الخدمات', 'الأسعار', 'الموقع', 'الأنشطة الترفيهية', 'سهولة الحركة وإمكانية الوصول']],
-    ['9. هل تفضل وجود أنشطة ترفيهية ورياضية متنوعة داخل المنتجع؟', ['نعم', 'لا', 'إلى حد ما']],
-    ['10. هل سمعت من قبل عن منتجعات سياحية مصممة خصيصًا لتلبية احتياجات ذوي الهمم؟', ['نعم', 'لا']],
-    ['11. ما رأيك في فكرة إنشاء منتجع سياحي متكامل لذوي الهمم؟', ['فكرة ممتازة', 'فكرة جيدة', 'فكرة عادية', 'لا أراها ضرورية']],
-    ['12. هل ترى أن المجتمع يحتاج إلى هذا النوع من المنتجعات؟', ['نعم', 'لا', 'إلى حد ما']],
-    ['13. هل تفضل زيارة منتجع يوفر خدمات متكاملة لذوي الهمم؟', ['نعم', 'لا', 'ربما']],
-    ['14. هل ترى أن المنتجع يجب أن يكون مناسبًا لاستقبال ذوي الهمم وأسرهم وجميع فئات المجتمع؟', ['نعم', 'لا']],
-    ['15. ما أكثر شيء يجذبك في فكرة المنتجع؟', ['توفير الراحة والاستقلالية لذوي الهمم', 'الأنشطة الترفيهية المتنوعة', 'التصميمات والتجهيزات الخاصة', 'الخدمات الطبية والرعاية', 'التجربة السياحية المختلفة']],
-    ['16. ما الميزانية المناسبة للفرد مقابل الإقامة لليلة واحدة؟', ['أقل من 500 جنيه', 'من 500 إلى 1000 جنيه', 'من 1000 إلى 1500 جنيه', 'من 1500 إلى 2000 جنيه', 'أكثر من 2000 جنيه']],
-    ['17. ما الخدمات التي تتوقع وجودها داخل المنتجع؟ (يمكن اختيار أكثر من إجابة)', ['غرف مجهزة لذوي الإعاقة الحركية', 'حمامات مجهزة', 'منحدرات ومصاعد', 'حمامات سباحة مجهزة', 'مطاعم وكافيهات', 'مركز طبي', 'خدمات العلاج الطبيعي', 'أنشطة رياضية وترفيهية', 'شاطئ مجهز وسهل الوصول إليه'], 'checkbox'],
-    ['18. هل ترى أهمية وجود موظفين مدربين على التعامل مع ذوي الهمم؟', ['نعم', 'لا']],
-    ['19. هل تفضل توفير برامج ترفيهية وأنشطة مناسبة لمختلف أنواع الإعاقات؟', ['نعم', 'لا', 'ربما']],
-    ['20. هل توافق على دفع مبلغ إضافي مقابل الحصول على خدمات وتجهيزات متميزة؟', ['نعم', 'لا', 'حسب قيمة الخدمات']],
-    ['21. ما الطريقة المفضلة لديك للتعرف على المنتجع؟', ['Facebook', 'Instagram', 'TikTok', 'الإعلانات التلفزيونية', 'ترشيحات الأصدقاء والأقارب', 'المواقع السياحية']],
-    ['22. ما الطريقة التي تفضل استخدامها للحجز؟', ['الموقع الإلكتروني', 'تطبيق الهاتف', 'الاتصال الهاتفي', 'الحجز المباشر من المنتجع']],
-    ['23. هل تفضل وجود عروض وخصومات للعائلات؟', ['نعم', 'لا']],
-    ['24. هل تؤثر تقييمات وآراء الزوار السابقين على قرارك بالحجز؟', ['نعم', 'لا', 'إلى حد ما']],
-    ['25. هل تفضل إمكانية الاطلاع على صور الغرف والخدمات والأنشطة قبل الحجز؟', ['نعم', 'لا']],
-    ['26. كيف تقيم فكرة إنشاء هذا المنتجع بشكل عام؟', ['ممتازة', 'جيدة جدًا', 'جيدة', 'مقبولة', 'ضعيفة']],
-    ['27. هل تنصح الآخرين بزيارة هذا المنتجع في حالة تنفيذه بالمواصفات المطلوبة؟', ['نعم', 'لا', 'ربما']],
-    ['28. هل تتوقع نجاح المشروع وانتشاره في السوق السياحي المصري؟', ['نعم', 'لا', 'إلى حد ما']],
-    ['29. هل ترى أن المشروع يمكن أن يساهم في تحسين السياحة الدامجة في مصر؟', ['نعم', 'لا', 'إلى حد ما']],
-    ['30. ما اقتراحاتك أو إضافاتك التي ترى أنها ستساعد على نجاح المنتجع؟', 'textarea']
-];
-
-function buildSurvey() {
-    const form = document.getElementById('surveyForm');
-
-    questions.forEach((question, index) => {
-        const box = document.createElement('div');
-        box.className = 'survey-group';
-
-        const title = document.createElement('h3');
-        title.textContent = question[0];
-
-        box.appendChild(title);
-
-        let field;
-
-        if (question[1] === 'text') {
-            field = document.createElement('input');
-            field.type = 'text';
-            field.name = 'q' + (index + 1);
-
-        } else if (question[1] === 'textarea') {
-            field = document.createElement('textarea');
-            field.name = 'q' + (index + 1);
-            field.rows = 4;
-
-        } else {
-            field = document.createElement('div');
-            field.className = 'options';
-
-            question[1].forEach(option => {
-                const label = document.createElement('label');
-                const input = document.createElement('input');
-
-                input.type = question[2] === 'checkbox' ? 'checkbox' : 'radio';
-                input.name = 'q' + (index + 1);
-                input.value = option;
-
-                label.appendChild(input);
-                label.appendChild(document.createTextNode(option));
-
-                field.appendChild(label);
-            });
-        }
-
-        box.appendChild(field);
-        form.appendChild(box);
-    });
-}
-
-buildSurvey();
-
-// إرسال الاستبيان
-
-document.getElementById('surveySubmit').addEventListener('click', async () => {
-    const form = document.getElementById('surveyForm');
-    const answers = {};
-
-    questions.forEach((question, index) => {
-        const name = 'q' + (index + 1);
-
-        const inputs = [
-            ...form.querySelectorAll('[name="' + name + '"]')
-        ];
-
-        if (inputs.length > 1 && inputs[0].type === 'checkbox') {
-            answers[name] = inputs
-                .filter(input => input.checked)
-                .map(input => input.value);
-        } else {
-            answers[name] =
-                inputs.find(input => input.checked)?.value ??
-                inputs[0]?.value ??
-                '';
-        }
+        bookingModal.classList.add('open');
+      });
     });
 
-    const button = document.getElementById('surveySubmit');
-    const message = document.getElementById('surveyMessage');
+    closeBooking.addEventListener('click', () => {
+      bookingModal.classList.remove('open');
+    });
 
-    button.disabled = true;
-    button.textContent = 'جارٍ الإرسال...';
+    bookingModal.addEventListener('click', event => {
+      if (event.target === bookingModal) {
+        bookingModal.classList.remove('open');
+      }
+    });
 
-    try {
-        const { error } = await db
-            .from('survey_responses')
-            .insert({ answers });
+    const bookingDate = document.getElementById('bookingDate');
 
-        if (error) throw error;
+    const today = new Date();
+    const localDate = new Date(
+      today.getTime() - today.getTimezoneOffset() * 60000
+    ).toISOString().split('T')[0];
 
-        showMessage(message, 'شكرًا لمشاركتك! تم إرسال الاستبيان بنجاح.');
-        form.reset();
+    bookingDate.min = localDate;
 
-    } catch (error) {
-        showMessage(
-            message,
-            'تعذر إرسال الاستبيان: ' + error.message,
-            true
-        );
+    bookingForm.addEventListener('submit', event => {
+      event.preventDefault();
 
-    } finally {
-        button.disabled = false;
-        button.textContent = 'إرسال الاستبيان';
-    }
-});
+      const customer = document.getElementById('customerName').value.trim();
+      const date = bookingDate.value;
+      const count = Number(document.getElementById('ticketCount').value);
 
-// ==========================================
-// تحميل الصور والفيديوهات من Supabase
-// ==========================================
+      if (!customer || !date || count < 1 || count > 20) {
+        alert('من فضلك راجع بيانات الحجز.');
+        return;
+      }
 
-async function loadMedia(kind) {
-    const isMenu = kind === 'menu';
+      const code = 'SAKAN-' +
+        Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const grid = document.getElementById(
-        isMenu ? 'menuGrid' : 'galleryGrid'
-    );
+      const total = selectedPrice * count;
 
-    const empty = document.getElementById(
-        isMenu ? 'menuEmpty' : 'galleryEmpty'
-    );
+      document.getElementById('ticketCustomer').textContent = customer;
+      document.getElementById('ticketActivity').textContent = selectedActivityName;
+      document.getElementById('ticketDate').textContent = date;
+      document.getElementById('ticketCountResult').textContent = count;
 
-    if (!grid || !empty) return;
+      document.getElementById('ticketTotal').textContent =
+        selectedPrice === 0 ? 'حسب الطلب' : total + ' جنيه';
 
-    grid.innerHTML = '<p class="notice">جارٍ تحميل الملفات...</p>';
-    empty.classList.add('hidden');
+      document.getElementById('ticketCode').textContent = code;
 
-    const folders = isMenu
-        ? ['menu']
-        : ['Images', 'Videos', 'gallery'];
+      bookingForm.style.display = 'none';
+      ticketResult.style.display = 'block';
+    });
 
-    const files = [];
-    const errors = [];
+    // ==========================================
+    // إرسال الاستبيان
+    // ==========================================
 
-    try {
-        for (const folder of folders) {
-            const { data, error } = await db.storage
-                .from(BUCKET)
-                .list(folder, {
-                    limit: 1000,
-                    sortBy: {
-                        column: 'created_at',
-                        order: 'desc'
-                    }
-                });
+    const surveyForm = document.getElementById('surveyForm');
+    const surveySuccess = document.getElementById('surveySuccess');
 
-            if (error) {
-                errors.push(folder + ': ' + error.message);
-                continue;
-            }
+    surveyForm.addEventListener('submit', event => {
+      event.preventDefault();
 
-            (data || []).forEach(file => {
-                if (file.name && file.id) {
-                    files.push({
-                        file,
-                        path: folder + '/' + file.name
-                    });
-                }
-            });
+      const formData = new FormData(surveyForm);
+      const answers = {};
+
+      for (let i = 2; i <= 27; i++) {
+        const answer = formData.get('q' + i);
+
+        if (!answer) {
+          alert('من فضلك أجب عن جميع الأسئلة المطلوبة.');
+          return;
         }
 
-        // قراءة الملفات الموجودة في جذر Bucket
-        if (!isMenu) {
-            const { data, error } = await db.storage
-                .from(BUCKET)
-                .list('', { limit: 1000 });
+        answers['q' + i] = answer;
+      }
 
-            if (error) {
-                errors.push('الجذر: ' + error.message);
-            } else {
-                (data || []).forEach(file => {
-                    if (file.name && file.id) {
-                        files.push({
-                            file,
-                            path: file.name
-                        });
-                    }
-                });
-            }
-        }
+      answers.q1 = formData.get('surveyName') || '';
+      answers.q28 = formData.get('q28') || '';
+      answers.q29 = formData.get('q29') || '';
+      answers.q30 = formData.get('q30') || '';
 
-        // إزالة التكرار
-        const uniqueFiles = [];
-        const seen = new Set();
+      console.log('Survey answers:', answers);
 
-        files.forEach(item => {
-            if (!seen.has(item.path)) {
-                seen.add(item.path);
-                uniqueFiles.push(item);
-            }
-        });
+      surveySuccess.style.display = 'block';
+      surveySuccess.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
 
-        grid.innerHTML = '';
+      surveyForm.reset();
+    });
 
-        if (!uniqueFiles.length) {
-            empty.classList.remove('hidden');
+    // ==========================================
+    // إعداد أول ظهور للموقع
+    // ==========================================
 
-            if (errors.length) {
-                grid.innerHTML =
-                    '<p class="notice">تعذر قراءة الملفات: ' +
-                    escapeHtml(errors.join(' | ')) +
-                    '</p>';
-            }
+    showPage('booking');
 
-            return;
-        }
-
-        uniqueFiles.sort((a, b) => {
-            return new Date(b.file.created_at || 0) -
-                   new Date(a.file.created_at || 0);
-        });
-
-        uniqueFiles.forEach(item => {
-            const file = item.file;
-            const path = item.path;
-
-            const { data } = db.storage
-                .from(BUCKET)
-                .getPublicUrl(path);
-
-            const url = data.publicUrl;
-
-            const mime = (
-                file.metadata?.mimetype || ''
-            ).toLowerCase();
-
-            const isVideo =
-                mime.startsWith('video/') ||
-                /\.(mp4|webm|mov|m4v|ogg)$/i.test(file.name);
-
-            const card = document.createElement('div');
-            card.className = 'media-card';
-
-            const media = document.createElement(
-                isVideo ? 'video' : 'img'
-            );
-
-            media.src = url;
-
-            if (isVideo) {
-                media.controls = true;
-                media.playsInline = true;
-                media.preload = 'metadata';
-            } else {
-                media.alt = file.name;
-                media.loading = 'lazy';
-            }
-
-            const caption = document.createElement('figcaption');
-            caption.textContent = file.name;
-
-            card.appendChild(media);
-            card.appendChild(caption);
-
-            if (currentUser) {
-                const deleteButton = document.createElement('button');
-
-                deleteButton.className = 'btn danger';
-                deleteButton.textContent = 'حذف';
-
-                deleteButton.addEventListener('click', () => {
-                    deleteMedia(path, kind);
-                });
-
-                card.appendChild(deleteButton);
-            }
-
-            grid.appendChild(card);
-        });
-
-    } catch (error) {
-        console.error('loadMedia error:', error);
-
-        grid.innerHTML =
-            '<p class="notice">حدث خطأ: ' +
-            escapeHtml(error.message) +
-            '</p>';
-    }
-}
-
-// ==========================================
-// حذف الملفات
-// ==========================================
-
-async function deleteMedia(path, kind) {
-    if (!currentUser) {
-        alert('سجل دخول الإدارة أولًا.');
-        return;
-    }
-
-    if (!confirm('هل تريد حذف هذا الملف نهائيًا؟')) {
-        return;
-    }
-
-    const { error } = await db.storage
-        .from(BUCKET)
-        .remove([path]);
-
-    if (error) {
-        alert('فشل الحذف: ' + error.message);
-        return;
-    }
-
-    alert('تم حذف الملف بنجاح.');
-
-    await loadMedia(kind);
-}
-
-// ==========================================
-// رفع الصور والفيديوهات
-// ==========================================
-
-async function upload(kind) {
-    if (!currentUser) {
-        alert('سجل دخول الإدارة أولًا.');
-        return;
-    }
-
-    const input = document.getElementById(
-        kind === 'menu' ? 'menuFiles' : 'galleryFiles'
-    );
-
-    const files = Array.from(input.files || []);
-
-    if (!files.length) {
-        alert('اختار الملفات الأول.');
-        return;
-    }
-
-    const button = document.getElementById(
-        kind === 'menu' ? 'uploadMenu' : 'uploadGallery'
-    );
-
-    const oldText = button.textContent;
-
-    button.disabled = true;
-
-    let success = 0;
-    let failed = 0;
-
-    try {
-        for (const file of files) {
-            if (file.size > 50 * 1024 * 1024) {
-                alert(file.name + ' أكبر من 50 ميجابايت.');
-                failed++;
-                continue;
-            }
-
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-
-            if (kind === 'menu' && !isImage) {
-                alert('المنيو يقبل الصور فقط.');
-                failed++;
-                continue;
-            }
-
-            if (kind === 'gallery' && !isImage && !isVideo) {
-                alert('نوع الملف غير مدعوم: ' + file.name);
-                failed++;
-                continue;
-            }
-
-            const folder = kind === 'menu'
-                ? 'menu'
-                : (isVideo ? 'Videos' : 'Images');
-
-            const safeName = file.name.replace(
-                /[^\w.\-\u0600-\u06FF]/g,
-                '_'
-            );
-
-            const path =
-                folder + '/' +
-                Date.now() + '_' +
-                Math.random().toString(36).slice(2, 8) +
-           
+  </script>
+</body>
+</html>
