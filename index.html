@@ -607,8 +607,19 @@ continue;
 
 if(kind==='gallery'&&!file.type.startsWith('image/')&&!file.type.startsWith('video/'))continue;
 
-let safe=file.name.replace(/[^\w.\-\u0600-\u06FF]/g,'_');
-let path=kind+'/'+Date.now()+'_'+safe;
+let safe = file.name.replace(/[^\w.\-\u0600-\u06FF]/g,'_');
+
+let folder;
+
+if (kind === 'menu') {
+    folder = 'menu';
+} else if (file.type.startsWith('video/')) {
+    folder = 'Videos';
+} else {
+    folder = 'Images';
+}
+
+let path = folder + '/' + Date.now() + '_' + safe;
 
 let {error}=await db.storage.from(BUCKET).upload(path,file,{
 upsert:false,
