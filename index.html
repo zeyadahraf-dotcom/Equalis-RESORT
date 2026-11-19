@@ -1317,6 +1317,37 @@ adminLoginForm.addEventListener('submit', async (event) => {
     });
 
     async function loadAdminData() {
+  const bookingsBox = document.getElementById('adminBookings');
+  const surveysBox = document.getElementById('adminSurveys');
+
+  const [b, q] = await Promise.all([
+    supabaseClient.from('bookings')
+      .select('customer_name,phone,activity,booking_date,persons,notes,created_at')
+      .order('created_at', { ascending: false })
+      .limit(50),
+
+    supabaseClient.from('surveys')
+      .select('*', { count: 'exact', head: true })
+  ]);
+
+  bookingsBox.textContent = b.error
+    ? `تعذر قراءة الحجوزات: ${b.error.message}`
+    : (b.data.length
+      ? b.data.map(x =>
+        `${x.customer_name} | ${x.phone} | ${x.activity} | ${x.booking_date} | عدد: ${x.persons}`
+      ).join('\n')
+      : 'لا توجد حجوزات بعد.');
+
+  bookingsBox.style.whiteSpace = 'pre-wrap';
+
+  surveysBox.textContent = q.error
+    ? `تعذر قراءة الاستبيانات: ${q.error.message}`
+    : (q.count > 0
+      ? `يوجد ${q.count} استبيان مسجل.`
+      : 'لا توجد استبيانات بعد.');
+
+  surveysBox.style.whiteSpace = 'normal';
+                    }
       const bookingsBox = document.getElementById('adminBookings');
       const surveysBox = document.getElementById('adminSurveys');
       const [b, q] = await Promise.all([
